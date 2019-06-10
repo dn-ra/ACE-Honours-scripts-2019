@@ -25,13 +25,13 @@ class Nucmer_Match(object):
     hitstops_1 = None
     hitstarts_2 = None
     hitstops_2 = None
-    numerrors = None
+    simerrors = None
     name = None
     
     
     ''' self is the nucmer_match object, match is the seq names and seq lengths,
     match deets is a dictionary containing separate arrays of hit starts (x2), hit stops (x2),
-    and numerrors'''
+    and similarityerrors'''
     def __init__(self, name, match, matchdeets):
         
         #TODO - need float here or integer? integer only works for python 3
@@ -41,19 +41,31 @@ class Nucmer_Match(object):
         self.hitstops_1 =  list(map(int, [entry[1] for entry in matchdeets]))
         self.hitstarts_2 = list(map(int, [entry[2] for entry in matchdeets]))
         self.hitstops_2 =  list(map(int, [entry[3] for entry in matchdeets]))
-        self.numerrors =   list(map(int, [entry[4] for entry in matchdeets]))
+        self.simerrors =   list(map(int, [entry[5] for entry in matchdeets]))
         self.name = name
         
     def __len__(self):
         '''what happens when you call length of the class object'''
-        return len(self.numerrors)
+        return len(self.simerrors)
         
     def display(self):
         print('> '+(' '.join(self.seqs))+'\n')
-        print('\t\tSeq1 region\tSeq2 region\tNumErrors')
+        print('\t\tSeq1 region\tSeq2 region\tSimilarityErrors')
         for i in range(len(self)):
-            print('Match {}\t\t{}:{}\t\t{}:{}\t\t{}'.format(i+1, self.hitstarts_1[i], self.hitstops_1[i], self.hitstarts_2[i], self.hitstops_2[i], self.numerrors[i]))
+            print('Match {}\t\t{}:{}\t\t{}:{}\t\t{}'.format(i+1, self.hitstarts_1[i], self.hitstops_1[i], self.hitstarts_2[i], self.hitstops_2[i], self.simerrors[i]))
 
+    def get_ani(self):
+        identity_list = []
+        for i in range(len(self)):
+            alignlen = float(self.hitstops_1[i]) - self.hitstarts_1[i]
+            identity_list.append((alignlen - self.simerrors[i]) / alignlen)
+        
+        ANI = sum(identity_list) / len(self)           
+            
+        return ANI
+        
+        
+        
 
     def gen_statistics(self):
         '''produce length ratio and bi-direcitonal alignment statistics to measure closeness of sequences''' 
@@ -66,10 +78,12 @@ class Nucmer_Match(object):
         alignment_ratio_1 = abs(matchlength_1/self.lengths[0])
         
         matchlength_2 = sum([float(self.hitstops_2[i]) - self.hitstarts_2[i] for i in range(len(self))])
-        alignment_ratio_2 = abs(matchlength_2/self.lengths[1])        
+        alignment_ratio_2 = abs(matchlength_2/self.lengths[1])
+
+        ANI = self.get_ani()         
            
         
-        return length_ratio, alignment_ratio_1, alignment_ratio_2
+        return length_ratio, alignment_ratio_1, alignment_ratio_2, ANI
         pass
 
 
@@ -112,7 +126,7 @@ def deltaread(file):
                 recording = True
                 continue
             elif recording == True:
-                matchdeets.append(line.split()[:-2])
+                matchdeets.append(line.split()[:-1])
                 
                 recording = False
     
@@ -138,6 +152,7 @@ def apply_threshold(deltadict, threshold = 0.97, outfile = None):
 
 
 def write_thresh_matches(thresh_matches, outfile):
+    #TODO - write header and stats to file
     '''write simple txt file containing sequence matches that pass threshold'''
     with open(outfile, 'w') as f:
         for elem in thresh_matches:
