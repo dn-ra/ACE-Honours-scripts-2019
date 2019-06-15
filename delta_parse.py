@@ -71,6 +71,7 @@ class Nucmer_Match(object):
     def gen_statistics(self):
         '''produce length ratio and bi-direcitonal alignment statistics to measure closeness of sequences''' 
         #TODO - rewrite so that length_ratio is always fraction
+        #fix using (min, max) so that fraction is never > 1
         #One variable in each converted to float so division works properly in Python 2
         length_ratio = float(self.lengths[0]) / self.lengths[1]
         
@@ -106,7 +107,7 @@ def deltaread(file):
     '''read through delta files'''
     with open(file, 'r') as f:
         inputline = f.readline().strip().split(" ")
-        deltaname = '_'.join([os.path.basename(elem) for elem in inputline])
+        deltaname = '---'.join([os.path.basename(elem) for elem in inputline])
         recording = False #"recording" (boolean variable) is a switcher that will determine whether the line is being stored or not (ie. to ignore positions of indels)
         matchdeets = []
         name = None
@@ -140,7 +141,7 @@ def deltaread(file):
     deltadict[deltaname] = delta
     return deltadict
 
-def apply_threshold(deltadict, threshold = 0.97, outfile = False):
+def apply_threshold(deltadict, threshold = 0.97, outfile = None):
     '''input = dictionary output from deltaparse function
     apply blanket ratio threshold level and select matches to send to FastANI'''
     thresh_matches = []
@@ -148,21 +149,25 @@ def apply_threshold(deltadict, threshold = 0.97, outfile = False):
         for match in value:
             stats = match.gen_statistics()
             if all(stat >= threshold for stat in stats):
-                thresh_matches.append(list(match.seqs))
+                thresh_matches.append(match.seqs)
+    match_dict = {}            
+    match_dict[next(iter(deltadict.keys())) +"---"+str(threshold)] = thresh_matches
     
     '''optionally write to file'''   
-    if outfile==True:
-        filename = next(iter(deltadict))
-        write_thresh_matches(thresh_matches, filename)
+    if outfile:
+        write_thresh_matches(match_dict, outfile)
         
-    return thresh_matches
+    return match_dict
 
 
-def write_thresh_matches(thresh_matches, filename):
-    #TODO - write header and stats to file
+def write_thresh_matches(match_dict, filename):
+    #TODO - write stats to file
     '''write simple txt file containing sequence matches that pass threshold'''
+    header = next(iter(match_dict.keys())).split("---")
+    matches = next(iter(match_dict.values()))
     with open(filename, 'w') as f:
-        for elem in thresh_matches:
-            f.write(elem[0] +' '+elem[1]+'\n')
+        f.write(header[0]+" "+header[1]+" at threshold of "+ header[2]+"\n")
+        for match in matches:
+            f.write(match[0] + ' '+ match[1] + '\n')
 
 #TODO - function to export in JSON format?
