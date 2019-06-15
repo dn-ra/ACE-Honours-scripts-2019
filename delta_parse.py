@@ -10,8 +10,9 @@ Created on Thu May 30 13:42:15 2019
 
 
 '''
-imports?
+imports
     '''
+import os
 
 
 
@@ -104,15 +105,17 @@ class Nucmer_Match(object):
 def deltaread(file):
     '''read through delta files'''
     with open(file, 'r') as f:
+        inputline = f.readline().strip().split(" ")
+        deltaname = '_'.join([os.path.basename(elem) for elem in inputline])
         recording = False #"recording" (boolean variable) is a switcher that will determine whether the line is being stored or not (ie. to ignore positions of indels)
         matchdeets = []
         name = None
-        delta = {} #name of dictionary for storage of Nucmer_Match objects
+        delta = [] #name of dictionary for storage of Nucmer_Match objects
         for line in f.readlines():
             if line.startswith('>'):
                 if name: #skip flushing to dictionary if this is the first match record
                     #FIRST - flush previous hit to a nucmer_match object
-                    delta[name] = Nucmer_Match(name, match, matchdeets)            
+                    delta.append(Nucmer_Match(name, match, matchdeets))            
                     #remove alignment details of previous match
                     del matchdeets[:]
                 #THEN - read in match details
@@ -131,30 +134,34 @@ def deltaread(file):
                 recording = False
     
     #flush last match to  nucmer_match object
-    delta[name] = Nucmer_Match(name, match, matchdeets)
+    delta.append(Nucmer_Match(name, match, matchdeets))
 
-    return delta
+    deltadict = {}
+    deltadict[deltaname] = delta
+    return deltadict
 
-def apply_threshold(deltadict, threshold = 0.97, outfile = None):
+def apply_threshold(deltadict, threshold = 0.97, outfile = False):
     '''input = dictionary output from deltaparse function
     apply blanket ratio threshold level and select matches to send to FastANI'''
     thresh_matches = []
-    for key, value in deltadict.items():
-        stats = value.gen_statistics()
-        if all(stat >= threshold for stat in stats):
-            thresh_matches.append(list(value.seqs))
+    for value in deltadict.values():
+        for match in value:
+            stats = match.gen_statistics()
+            if all(stat >= threshold for stat in stats):
+                thresh_matches.append(list(match.seqs))
     
     '''optionally write to file'''   
-    if outfile:
-        write_thresh_matches(thresh_matches, outfile)
+    if outfile==True:
+        filename = next(iter(deltadict))
+        write_thresh_matches(thresh_matches, filename)
         
     return thresh_matches
 
 
-def write_thresh_matches(thresh_matches, outfile):
+def write_thresh_matches(thresh_matches, filename):
     #TODO - write header and stats to file
     '''write simple txt file containing sequence matches that pass threshold'''
-    with open(outfile, 'w') as f:
+    with open(filename, 'w') as f:
         for elem in thresh_matches:
             f.write(elem[0] +' '+elem[1]+'\n')
 
