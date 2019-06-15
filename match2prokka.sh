@@ -19,17 +19,19 @@ mkdir -v "$TMPDIR"
 cd $TMPDIR
 
 #split matches into separate files, retain order
-NM=$(awk 'NR==1{print NF}'  $DELTAMATCHES)
+NM=2
 echo processing $NM columns of matches
 
-awk -v NM=$NM 'BEGIN{RS="\n";FS=" "} {for(i=1;i<=NM;i++){name="names_"i;print ">"$i> name}}' $DELTAMATCHES
+#how to export fasta files as varables for use elsewhere?
+awk -v NM=$NM 'BEGIN{RS="\n";FS=" "} NR==1{FASTA1=$1;FASTA2=$2}NR>1{for(i=1;i<=NM;i++){name="names_"i;print ">"$i> name}}' $DELTAMATCHES
 
 
 #retrieve sequences from original fasta file
 
 for file in names_*; do
 
-#FASTAFILE=
+
+#FASTAFILE=$(echo $base | tr "_")
 
 
 echo tmp file is $file
