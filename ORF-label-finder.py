@@ -76,15 +76,15 @@ if opts.cluster:
 
 #TODO - tidy this all up
 #make sure file writes firsts
-filename = opts.ids[0].split('/')[-1]
+fileprefix = opts.ids[0].split('/')[-1]
 
 
 if opts.dir:
     if not os.path.isdir(opts.dir):
         os.mkdir(opts.dir)
-    filename = "{}/{}_cdstags.csv".format(opts.dir, filename)
+    filename = "{}/{}_cdstags.csv".format(opts.dir, fileprefix)
 else:
-    filename = "{}_cdstags.csv".format(filename)
+    filename = "{}_cdstags.csv".format(fileprefix)
 
 with open(filename, 'w') as f:
     w = csv.writer(f, delimiter = '\t')
@@ -217,7 +217,7 @@ if opts.cluster:
     
     #write clustering to file
     #3 outcomes to include: 1. No ORFs on the contig, 2. No labels in the recovered hits, 3. No hits from DMND at all
-    with open('finaloutput.tsv', 'a') as f:
+    with open(fileprefix +'.clustered.tsv', 'a') as f:
         w = csv.writer(f, delimiter = '\t')
         for key, value in cdscluster.items():
             w.writerow([key])
