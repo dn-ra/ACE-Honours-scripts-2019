@@ -64,29 +64,53 @@ class Nucmer_Match(object):
         ANI = sum(identity_list) / len(self)           
             
         return ANI
+    
+    
+    #TODO - fix abs to put in correct place
+    def get_align1(self):
+        matchlength_1 = sum([float(self.hitstops_1[i]) - self.hitstarts_1[i] for i in range(len(self))])
+        alignment_ratio_1 = abs(matchlength_1/self.lengths[0])
         
+        return alignment_ratio_1
+    
+    def get_align2(self):
+    
+        matchlength_2 = sum([float(self.hitstops_2[i]) - self.hitstarts_2[i] for i in range(len(self))])
+        alignment_ratio_2 = abs(matchlength_2/self.lengths[1])
+        
+        return alignment_ratio_2
+    
+    def get_lengthratio(self):
+        length_ratio = float(self.lengths[0]) / self.lengths[1]
+        
+        return length_ratio
         
         
 
     def gen_statistics(self):
         '''produce length ratio and bi-direcitonal alignment statistics to measure closeness of sequences''' 
-        #TODO - rewrite so that length_ratio is always fraction
-        #fix using (min, max) so that fraction is never > 1
+        #Fractions should all be >1 now. Any deviations from this may constitute interesting alignment relationships
         #One variable in each converted to float so division works properly in Python 2
-        length_ratio = float(self.lengths[0]) / self.lengths[1]
+
+        length_ratio = float(min(self.lengths)) / max(self.lengths)
         
-        #TODO - fix abs to put in correct place
-        matchlength_1 = sum([float(self.hitstops_1[i]) - self.hitstarts_1[i] for i in range(len(self))])
-        alignment_ratio_1 = abs(matchlength_1/self.lengths[0])
+        alignment_ratio_1 = self.get_align1()
         
-        matchlength_2 = sum([float(self.hitstops_2[i]) - self.hitstarts_2[i] for i in range(len(self))])
-        alignment_ratio_2 = abs(matchlength_2/self.lengths[1])
+        alignment_ratio_2 = self.get_align2()
 
         ANI = self.get_ani()         
            
         
         return length_ratio, alignment_ratio_1, alignment_ratio_2, ANI
         pass
+    
+    def apply_threshold(self, threshold = 0.97):
+        stats = self.gen_statistics()
+        if (stat >= threshold for stat in stats):
+            passthresh = True
+            
+        return passthresh
+        
 
 
     
@@ -141,14 +165,13 @@ def deltaread(file):
     deltadict[deltaname] = delta
     return deltadict
 
-def apply_threshold(deltadict, threshold = 0.97, outfile = None):
+def dict_threshold(deltadict, threshold = 0.97, outfile = None):
     '''input = dictionary output from deltaparse function
     apply blanket ratio threshold level and select matches to send to FastANI'''
     thresh_matches = []
     for value in deltadict.values():
         for match in value:
-            stats = match.gen_statistics()
-            if all(stat >= threshold for stat in stats):
+            if match.apply_threshold(threshold) == True:
                 thresh_matches.append(match.seqs)
     match_dict = {}            
     match_dict[next(iter(deltadict.keys())) +"---"+str(threshold)] = thresh_matches
@@ -169,5 +192,7 @@ def write_thresh_matches(match_dict, filename):
         f.write(header[0]+" "+header[1]+" at threshold of "+ header[2]+"\n")
         for match in matches:
             f.write(match[0] + ' '+ match[1] + '\n')
+            
+#def buildcluster
 
 #TODO - function to export in JSON format?
