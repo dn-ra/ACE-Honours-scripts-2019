@@ -105,8 +105,9 @@ class Nucmer_Match(object):
         pass
     
     def apply_threshold(self, threshold = 0.97):
+        passthresh = False
         stats = self.gen_statistics()
-        if (stat >= threshold for stat in stats):
+        if all(stat >= threshold for stat in stats):
             passthresh = True
             
         return passthresh
@@ -172,7 +173,7 @@ def dict_threshold(deltadict, threshold = 0.97, outfile = None):
     for value in deltadict.values():
         for match in value:
             if match.apply_threshold(threshold) == True:
-                thresh_matches.append(match.seqs)
+                thresh_matches.append(match)
     match_dict = {}            
     match_dict[next(iter(deltadict.keys())) +"---"+str(threshold)] = thresh_matches
     
@@ -191,7 +192,7 @@ def write_thresh_matches(match_dict, filename):
     with open(filename, 'w') as f:
         f.write(header[0]+" "+header[1]+" at threshold of "+ header[2]+"\n")
         for match in matches:
-            f.write(match[0] + ' '+ match[1] + '\n')
+            f.write(match.seqs[0] + ' '+ match.seqs[1] + '\n')
             
 #def buildcluster
 
