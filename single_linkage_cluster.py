@@ -5,7 +5,7 @@ To be used here for testing of single_contig clustering from delta match files''
 
 #pattern to determine if contig name is in spades format
 import re
-from logging import warning
+from logging import warning, 
 spadespattern = re.compile(r'NODE_[0-9]*_', re.UNICODE)
 
 class Contig_Cluster(object):
@@ -44,10 +44,9 @@ class Contig_Cluster(object):
         return None
     
     
-    def get_seqs(self):
+    def retrieve_seqs(self):
         
         return(seqlist)
-    #def get_seqs:
 
     def label_cluster():
     '''label cluster as linear or circular based on alignment evidence
@@ -59,26 +58,30 @@ class Contig_Cluster(object):
     #OrfM is already a subprocess in clusterer module
     
 
-    def sort_clusters(cluster_list):
-    '''sort clusters by: 
-    1. N in cluster, 2. length of N, 3. coverage of N
-    Don't get it just from the names. That's SPAdes format but some people won't use spades
-    Get it from the data directly. But megahit doesn't include any of this informaiton in the contig name, 
-    and coverage would need reads mapped'''
-             
-        
-        
-        def sortclustersbysize(c):
-            return len(c)
-        
-        def sortclusterbylength(c):
-            if c.has_spades() == False:
-                warning('Non-spades contig names not supported yet')
-            ##flag to  do this if contig format is spades
-            for cluster in cluster_list:
-                
-            ##flag to do this if contig format is spades
-
+def sort_clusters(cluster_list): #or maybe a dictionary instead?
+'''sort clusters by: 
+1. N in cluster, 2. length of N, 3. coverage of N
+Don't get it just from the names. That's SPAdes format but some people won't use spades
+Get it from the data directly. But megahit doesn't include any of this informaiton in the contig name, 
+and coverage would need reads mapped'''
+            
+    def sortbysize(c):
+        return c.size
+    
+    def sortbylength(c):
+        if c.has_spades() == False:
+            warning('Cannot sort clusters by length. Non-spades contig names not supported yet')
+        else: #has spades contigs
+            return c.av_length
+    
+    def sortbycov(c):
+        if c.has_spades() == False:
+            warning('Cannot sort clusters by coverage. Non-spades contig names not supported yet')
+        else: #has spades contigs
+            return(c.av_cov)
+    
+    #main sort function
+    for 
 
 '''!!! Don't edit this. This is what will be in the clusterer module of repeatm!!!'''
 def single_linkage_cluster(links): #originally a class function. changed here to just be 'links' as input for testing. Refer to original RepeatM module for original inputs.
