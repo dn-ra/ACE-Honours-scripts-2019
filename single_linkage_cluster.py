@@ -1,18 +1,29 @@
 '''This from RepeatM Clusterer module - author wwood.
 To be used here for testing of single_contig clustering from delta match files'''
 
+'''
+    imports
+        '''
+        
+
+import re
+from logging import warning #also import exceptions?
+from operator import itemgetter
 
 
 #pattern to determine if contig name is in spades format
-import re
-from logging import warning
 spadespattern = re.compile(r'NODE_[0-9]*_', re.UNICODE)
 
+'''--------------------Begin class definition------------------------------'''
 class Contig_Cluster(object):
     def __init__(self, node_list):
+        if isinstance(node_list, str):
+            raise RuntimeError('input to Contig_Cluster class must be list. String has been entered.')
         self.nodes = node_list
         self.size = len(self.nodes)
-        
+        self.av_cov = None
+        self.av_length = None
+         #has_spades necessary?       
         if self.has_spades() == True:
             length_total = 0
             cov_total = 0
@@ -29,55 +40,65 @@ class Contig_Cluster(object):
             self.av_length = length_total / spades_seqs
         else:
             warning('Non-Spades contig names not supported yet')
-        
-        
-    
+    #necessary?
     def has_spades(self):
+        #TODO - stop interpreting single contigs as list
         spades = False
         for c in self.nodes:
             if spadespattern.match(c):
                 spades = True
                 break
         return spades
-    
+    #TODO -
     def plas_label(self):
         return None
     
     
-    def get_seqs(self):
+    def retrieve_seqs(self):
+        #all I need are nodes and location of source fasta files? use sequence library in repeatM
+        #pop out assembly number from start of contig? use as input the source fastafiles?
+        nodestring = ''
+        assemblystring = ''
+        for n in self.nodes:
+            nodesplit = n.split("__")
+            nodestring+=(">"+nodesplit.pop()+"\n") #second entry into nodelist
+            assemblystring+=(nodesplit+"\n") #remainder (1st entry) into assembly list
         
-        return(seqlist)
-    #def get_seqs:
+        #awk (retrieve sequence) $contigID $assembly_file
+        nodefind = '''-v name=$node 'BEGIN{RS=">";FS="\n"}NR>1{if ($1~/name/) print ">"$0}'''
+        CMD = 'while read -r node <&1 && read -r assembly <&2; do awk {} $assembly; done 1<(printf "{}") 2<(printf "{}")'.format(nodefind, nodestring, assemblystring)
 
-    def label_cluster():
-    '''label cluster as linear or circular based on alignment evidence
-    Evidence includes: 
-    - Does the sequence consistenly start and end with the same ORF? (don't need to know the proteins: Use OrfM)
-    - Do regions align globally or differentially?
-    - do endings overlap?
-    '''
+        return None
+    #TODO -
+    def label_cluster(self):
+        '''label cluster as linear or circular based on alignment evidence
+        Evidence includes: 
+        - Does the sequence consistenly start and end with the same ORF? (don't need to know the proteins: Use OrfM)
+        - Do regions align globally or differentially?
+        - do endings overlap?
+        '''
     #OrfM is already a subprocess in clusterer module
-    
+        return None
 
-    def sort_clusters(cluster_list):
+
+
+'''---------------------End class definition-------------------------------'''
+
+
+def sort_clusters(cluster_list): #or maybe a dictionary instead?
     '''sort clusters by: 
     1. N in cluster, 2. length of N, 3. coverage of N
     Don't get it just from the names. That's SPAdes format but some people won't use spades
     Get it from the data directly. But megahit doesn't include any of this informaiton in the contig name, 
     and coverage would need reads mapped'''
-             
-        
-        
-        def sortclustersbysize(c):
-            return len(c)
-        
-        def sortclusterbylength(c):
-            if c.has_spades() == False:
-                warning('Non-spades contig names not supported yet')
-            ##flag to  do this if contig format is spades
-            for cluster in cluster_list:
-                
-            ##flag to do this if contig format is spades
+    #TODO - sort out lambda functions
+    sortbysize = lambda c: (c.size is not None, c.size)
+    sortbylength = lambda c: (c.av_length is not None, c.av_length)
+    sortbycov = lambda c: (c.av_cov is not None, c.av_cov)
+    
+    
+    #main sort function
+    return cluster_list.sort(reverse=True, key= lambda c: (sortbysize(c), sortbylength(c), sortbycov(c)))
 
 
 '''!!! Don't edit this. This is what will be in the clusterer module of repeatm!!!'''
