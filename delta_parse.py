@@ -7,6 +7,10 @@ Created on Thu May 30 13:42:15 2019
 @author: Daniel Rawlinson, Australian Centre for Ecogenomics (ACE)
 @email: daniel.rawlinson@uqconnect.edu.au
 """
+'''
+TODOS - remove name from Nucmer_Match object
+
+'''
 
 
 '''
@@ -122,7 +126,7 @@ class Nucmer_Match(object):
 
 
 #'''Temp file for testing'''
-#file = 'C:\\Users\\dan_r\\Documents\\Honours_Data\\nucmertest\\testsplitvserrors\\splitvserrors_0.2_errors.delta'
+file = 'C:\\Users\\dan_r\\Documents\\Honours_Data\\nucmertest\\testsplitvserrors\\splitvserrors_0.2_errors.delta'
 
 ''' Init arrays for alignment data of each match.
     Placed together, starts, stops, and errors will form a matrix with number of alignments equal to width
@@ -130,6 +134,8 @@ class Nucmer_Match(object):
 
 def deltaread(file):
     '''read through delta files'''
+    #TODO - ignore matches to self
+    #TODO - ignore reverse matches
     with open(file, 'r') as f:
         inputline = f.readline().strip().split(" ")
         deltaname = '---'.join([os.path.basename(elem) for elem in inputline])
@@ -166,7 +172,7 @@ def deltaread(file):
     deltadict[deltaname] = delta
     return deltadict
 
-def dict_threshold(deltadict, threshold = 0.97, outfile = None):
+def dict_threshold(deltadict, threshold = 0.97, collate = False, outfile = None):
     '''input = dictionary output from deltaparse function
     apply blanket ratio threshold level and select matches to send to FastANI'''
     thresh_matches = []
@@ -177,13 +183,42 @@ def dict_threshold(deltadict, threshold = 0.97, outfile = None):
     match_dict = {}            
     match_dict[next(iter(deltadict.keys())) +"---"+str(threshold)] = thresh_matches
     
+    if collate == True:
+        #run as subprocess?
+        sig_matches = collate_sig_matches(match_dict)
+    
     '''optionally write to file'''   
     if outfile:
         write_thresh_matches(match_dict, outfile)
         
     return match_dict
+#TODO - see comments
+def collate_sig_matches(match_dict): #how to pass environment variable into function? but only if it exists?
+    try:
+        current_matches = sig_matches #test if following on from a previous call
+    except NameError:
+        current_matches = []
+    
+    for match in next(iter(match_dict.values())):
+        current_matches.append(match)
+        
+    sig_matches = current_matches
+    return sig_matches #currently as a list of matches. But should I index their names in a dictionary?
 
+#TODO
+def sig_matches_to_dict(sig_matches):
+    return None
 
+#necessary? just do this during single_linkage_cluster generation
+def extract_by_node(match_dict, node): #node with assembly information still at the front
+    firstlist = []
+    secondlist = []
+    for k, v in match_dict.items():
+        firstlist.append(v.seqs[0])
+        secondlist.append(v.seqs[1])
+    return None
+    
+    
 def write_thresh_matches(match_dict, filename):
     #TODO - write stats to file
     '''write simple txt file containing sequence matches that pass threshold'''
@@ -193,6 +228,11 @@ def write_thresh_matches(match_dict, filename):
         f.write(header[0]+" "+header[1]+" at threshold of "+ header[2]+"\n")
         for match in matches:
             f.write(match.seqs[0] + ' '+ match.seqs[1] + '\n')
+
+
+#TODO - write this funciton. Remove matches to the same assembly. implement this during deltaread? 
+def trim_identical_matches():
+   return None 
             
 #def buildcluster
 
