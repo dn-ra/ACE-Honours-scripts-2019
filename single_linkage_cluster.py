@@ -16,14 +16,14 @@ spadespattern = re.compile(r'NODE_[0-9]*_', re.UNICODE)
 
 '''--------------------Begin class definition------------------------------'''
 class Contig_Cluster(object):
-    def __init__(self, node_list):
+    def __init__(self, node_list, matches):
         if isinstance(node_list, str):
             raise RuntimeError('input to Contig_Cluster class must be list. String has been entered.')
         self.nodes = node_list
         self.size = len(self.nodes)
         self.av_cov = None
         self.av_length = None
-        self.matches = [] #fill this in later
+        self.matches = set(matches) 
          #has_spades necessary?       
         if self.has_spades() == True:
             length_total = 0
@@ -73,8 +73,9 @@ class Contig_Cluster(object):
         return None
     
     def inherit_matches(self, match_dict): #apply to cluster, but inherit from dict_threshold output
-        for n in self.nodes:
+        #for n in self.nodes:
            #write function here or call another function? 
+         return None  
     #TODO -
     def label_cluster(self):
         '''label cluster as linear or circular based on alignment evidence
@@ -124,9 +125,10 @@ def cluster_nucmer_matches(sig_matches): #sig_matches comes out of delta_parse.c
     cluster_list = single_linkage_cluster(match_links) #main clustering step
     
     for cluster in cluster_list:
-        cluster_match_objects = []
+        nucmer_match_in_cluster = []
         for node in cluster:
-            cluster_match_objects += (list(sig_match_dict[node]))             
+            nucmer_match_in_cluster += set(sig_match_dict[node])
+        Contig_Cluster(cluster, nucmer_match_in_cluster)     
         
     
     
