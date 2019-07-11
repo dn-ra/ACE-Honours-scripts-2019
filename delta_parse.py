@@ -8,7 +8,9 @@ Created on Thu May 30 13:42:15 2019
 @email: daniel.rawlinson@uqconnect.edu.au
 """
 '''
-TODOS - remove name from Nucmer_Match object
+TODOS - 
+    -function for detecting and dealing with overlap situations
+    -partial match situaitons
 
 '''
 
@@ -31,13 +33,12 @@ class Nucmer_Match(object):
     hitstarts_2 = None
     hitstops_2 = None
     simerrors = None
-    name = None
     
     
     ''' self is the nucmer_match object, match is the seq names and seq lengths,
     match deets is a dictionary containing separate arrays of hit starts (x2), hit stops (x2),
     and similarityerrors'''
-    def __init__(self, name, match, matchdeets):
+    def __init__(self, match, matchdeets):
         
         #TODO - need float here or integer? integer only works for python 3
         self.seqs =        [match[0],match[1]]
@@ -47,7 +48,6 @@ class Nucmer_Match(object):
         self.hitstarts_2 = list(map(int, [entry[2] for entry in matchdeets]))
         self.hitstops_2 =  list(map(int, [entry[3] for entry in matchdeets]))
         self.simerrors =   list(map(int, [entry[5] for entry in matchdeets]))
-        self.name = name
         
     def __len__(self):
         '''what happens when you call length of the class object'''
@@ -117,11 +117,6 @@ class Nucmer_Match(object):
         return passthresh
         
 
-
-    
-    
-    #TODO - function for detecting and dealing with overlap situations
-
 '''--------------------------end class definition---------------------------'''
 
 
@@ -134,27 +129,31 @@ file = 'C:\\Users\\dan_r\\Documents\\Honours_Data\\nucmertest\\testsplitvserrors
 
 def deltaread(file):
     '''read through delta files'''
-    #TODO - ignore matches to self
     #TODO - ignore reverse matches
     with open(file, 'r') as f:
         inputline = f.readline().strip().split(" ")
         deltaname = '---'.join([os.path.basename(elem) for elem in inputline])
         recording = False #"recording" (boolean variable) is a switcher that will determine whether the line is being stored or not (ie. to ignore positions of indels)
         matchdeets = []
-        name = None
+        seen_matches = []
+        name = False #do we have a match ready to write yet?
         delta = [] #name of dictionary for storage of Nucmer_Match objects
-        for line in f.readlines():
+        for line in f.readlines(): #parsing of line with match info
             if line.startswith('>'):
                 if name: #skip flushing to dictionary if this is the first match record
                     #FIRST - flush previous hit to a nucmer_match object
-                    delta.append(Nucmer_Match(name, match, matchdeets))            
+                    if match.sort() not in seen_matches: #if reverse has not already been read
+                        delta.append(Nucmer_Match(match, matchdeets))  
+                        seen_matches.append(match)
                     #remove alignment details of previous match
                     del matchdeets[:]
                 #THEN - read in match details
-                recording = True
                 match = line.replace('>', '').split()
-                #TODO - implement a shorter unique naming system
-                name = '_'.join(match)
+                if match[0] == match[1]: #skip if it's a match to itself
+                    continue
+                else:
+                    recording = True
+                    name = True
                 
                 continue
             elif line == '0\n':
@@ -166,7 +165,7 @@ def deltaread(file):
                 recording = False
     
     #flush last match to  nucmer_match object
-    delta.append(Nucmer_Match(name, match, matchdeets))
+    delta.append(Nucmer_Match(match, matchdeets))
 
     deltadict = {}
     deltadict[deltaname] = delta
@@ -185,7 +184,7 @@ def dict_threshold(deltadict, threshold = 0.97, collate = False, outfile = None)
     
     if collate == True:
         #run as subprocess?
-        sig_matches = collate_sig_matches(match_dict)
+        sig_matches = collate_sig_matches(match_dict) #will need to set sig_matches to [] when calling dict_threshold in the main program
     
     '''optionally write to file'''   
     if outfile:
@@ -193,7 +192,7 @@ def dict_threshold(deltadict, threshold = 0.97, collate = False, outfile = None)
         
     return match_dict
 #TODO - see comments
-def collate_sig_matches(match_dict): #how to pass environment variable into function? but only if it exists?
+def collate_sig_matches(match_dict, sig_matches = None): #how to pass environment variable into function? but only if it exists?
     try:
         current_matches = sig_matches #test if following on from a previous call
     except NameError:
