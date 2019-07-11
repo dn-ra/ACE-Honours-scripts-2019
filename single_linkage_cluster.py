@@ -23,6 +23,7 @@ class Contig_Cluster(object):
         self.size = len(self.nodes)
         self.av_cov = None
         self.av_length = None
+        self.matches = [] #fill this in later
          #has_spades necessary?       
         if self.has_spades() == True:
             length_total = 0
@@ -65,10 +66,15 @@ class Contig_Cluster(object):
             assemblystring+=(nodesplit+"\n") #remainder (1st entry) into assembly list
         
         #awk (retrieve sequence) $contigID $assembly_file
-        nodefind = '''-v name=$node 'BEGIN{RS=">";FS="\n"}NR>1{if ($1~/name/) print ">"$0}'''
-        CMD = 'while read -r node <&1 && read -r assembly <&2; do awk {} $assembly; done 1<(printf "{}") 2<(printf "{}")'.format(nodefind, nodestring, assemblystring)
+        nodefind_awk = '''-v name=$node 'BEGIN{RS=">";FS="\n"}NR>1{if ($1~/name/) print ">"$0}'''
+        CMD = 'while read -r node <&1 && read -r assembly <&2; do awk {} $assembly; done 1<(printf "{}") 2<(printf "{}")'.format(nodefind_awk, nodestring, assemblystring)
 
+        ##TODO - run subprocess
         return None
+    
+    def inherit_matches(self, match_dict): #apply to cluster, but inherit from dict_threshold output
+        for n in self.nodes:
+           #write function here or call another function? 
     #TODO -
     def label_cluster(self):
         '''label cluster as linear or circular based on alignment evidence
@@ -100,9 +106,38 @@ def sort_clusters(cluster_list): #or maybe a dictionary instead?
     #main sort function
     return cluster_list.sort(reverse=True, key= lambda c: (sortbysize(c), sortbylength(c), sortbycov(c)))
 
+def cluster_nucmer_matches(sig_matches): #sig_matches comes out of delta_parse.collate_sig_matches()
+    sig_match_dict = {}
+    match_links = []
+    for m in sig_matches:
+        link = m.seqs
+        try:
+            sig_match_dict[link[0]].append(m) 
+            sig_match_dict[link[1]].append(m)
+            
+        except KeyError:
+            sig_match_dict[link[0]] = [m] 
+            sig_match_dict[link[1]] = [m]
+            
+        match_links.append(link)
+    
+    cluster_list = single_linkage_cluster(match_links) #main clustering step
+    
+    for cluster in cluster_list:
+        cluster_match_objects = []
+        for node in cluster:
+            cluster_match_objects += (list(sig_match_dict[node]))             
+        
+    
+    
+    ''' Index here or later?
+    sig_match_dict = {}
+    for match in sig_matches:
+        sig_match_dict[match.seqs[0]] = match
+      '''  
 
 '''!!! Don't edit this. This is what will be in the clusterer module of repeatm!!!'''
-def single_linkage_cluster(links): #originally a class function. changed here to just be 'links' as input for testing. Refer to original RepeatM module for original inputs.
+def single_linkage_cluster(links): #dictionary or list input? #originally a class function. changed here to just be 'links' as input for testing. Refer to original RepeatM module for original inputs.
     '''Not sure this is the fastest, but eh. Return a list of lists, where each
     list is a cluster.'''
     clusters = {}
