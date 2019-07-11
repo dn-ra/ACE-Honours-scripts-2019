@@ -11,6 +11,7 @@ Created on Thu May 30 13:42:15 2019
 TODOS - 
     -function for detecting and dealing with overlap situations
     -partial match situaitons
+    -Don't just pass significant Nucmer_Matches into a list. Make a subclass with inherited functions. 
 
 '''
 
@@ -128,9 +129,9 @@ file = 'C:\\Users\\dan_r\\Documents\\Honours_Data\\nucmertest\\testsplitvserrors
     '''
 
 def deltaread(file):
-    '''read through delta files'''
-    #TODO - ignore reverse matches
+    '''parse delta files'''
     with open(file, 'r') as f:
+        self_match_count = 0
         inputline = f.readline().strip().split(" ")
         deltaname = '---'.join([os.path.basename(elem) for elem in inputline])
         recording = False #"recording" (boolean variable) is a switcher that will determine whether the line is being stored or not (ie. to ignore positions of indels)
@@ -150,6 +151,7 @@ def deltaread(file):
                 #THEN - read in match details
                 match = line.replace('>', '').split()
                 if match[0] == match[1]: #skip if it's a match to itself
+                    self_match_count +=1
                     continue
                 else:
                     recording = True
@@ -169,11 +171,14 @@ def deltaread(file):
 
     deltadict = {}
     deltadict[deltaname] = delta
+    #TODO - Get # of sequences in single assembly to check assertion statement
+    #This will require a step to count number of sequences in the assembly fasta file, probably using bash. Worth it?
+    #assert (self_match_count == of_sequences_in_assembly), "Nucmer fail. All contigs should match to themselves if pre-processing has occured correctly. Please ensure assembly name amendment has been done."
     return deltadict
 
-def dict_threshold(deltadict, threshold = 0.97, collate = False, outfile = None):
+def dict_threshold(deltadict, threshold = 0.97, collate = False, outfile = None): #will need to include sig_matches if collate==True
     '''input = dictionary output from deltaparse function
-    apply blanket ratio threshold level and select matches to send to FastANI'''
+    apply blanket ratio threshold level and select to process further'''
     thresh_matches = []
     for value in deltadict.values():
         for match in value:
@@ -183,14 +188,18 @@ def dict_threshold(deltadict, threshold = 0.97, collate = False, outfile = None)
     match_dict[next(iter(deltadict.keys())) +"---"+str(threshold)] = thresh_matches
     
     if collate == True:
+        #TODO
         #run as subprocess?
         sig_matches = collate_sig_matches(match_dict) #will need to set sig_matches to [] when calling dict_threshold in the main program
     
     '''optionally write to file'''   
     if outfile:
         write_thresh_matches(match_dict, outfile)
-        
-    return match_dict
+    if collate==True:
+        return sig_matches
+    else:
+        return match_dict
+    
 #TODO - see comments
 def collate_sig_matches(match_dict, sig_matches = None): #how to pass environment variable into function? but only if it exists?
     try:

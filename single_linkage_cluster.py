@@ -43,7 +43,7 @@ class Contig_Cluster(object):
             warning('Non-Spades contig names not supported yet')
     #necessary?
     def has_spades(self):
-        #TODO - stop interpreting single contigs as list
+        #check if there is at least one spades contig in node_list
         spades = False
         for c in self.nodes:
             if spadespattern.match(c):
@@ -72,10 +72,6 @@ class Contig_Cluster(object):
         ##TODO - run subprocess
         return None
     
-    def inherit_matches(self, match_dict): #apply to cluster, but inherit from dict_threshold output
-        #for n in self.nodes:
-           #write function here or call another function? 
-         return None  
     #TODO -
     def label_cluster(self):
         '''label cluster as linear or circular based on alignment evidence
