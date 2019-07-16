@@ -7,12 +7,17 @@ To be used here for testing of single_contig clustering from delta match files''
         
 
 import re
+import subprocess
+import tempfile
 from logging import warning #also import exceptions?
 from operator import itemgetter
 
 
 #pattern to determine if contig name is in spades format
 spadespattern = re.compile(r'NODE_[0-9]*_', re.UNICODE)
+
+#set delimiter here?
+#delim = '__'
 
 '''--------------------Begin class definition------------------------------'''
 class Contig_Cluster(object):
@@ -55,22 +60,51 @@ class Contig_Cluster(object):
         return None
     
     
-    def retrieve_seqs(self):
+    def retrieve_seqs(self, outfile, get_bam_for_nodes = False):
         #all I need are nodes and location of source fasta files? use sequence library in repeatM
         #pop out assembly number from start of contig? use as input the source fastafiles?
-        nodestring = ''
-        assemblystring = ''
+        #Beware leaked processes
+        #is sending to awk really a good idea??
+        #set nodes and assemblies to dictionary instead?
+        
+                
+        nodelist = []
+        assemblylist = []
         for n in self.nodes:
             nodesplit = n.split("__")
-            nodestring+=(">"+nodesplit.pop()+"\n") #second entry into nodelist
-            assemblystring+=(nodesplit+"\n") #remainder (1st entry) into assembly list
+            nodelist.append(">"+nodesplit.pop()) #second entry into nodelist
+            assemblylist.append(nodesplit) #remainder (1st entry) into assembly list
+        if get_bam_for_nodes ==True:
+            gen_bam(assemblylist, nodelist, *location)
+            
         
-        #awk (retrieve sequence) $contigID $assembly_file
-        nodefind_awk = '''-v name=$node 'BEGIN{RS=">";FS="\n"}NR>1{if ($1~/name/) print ">"$0}'''
-        CMD = 'while read -r node <&1 && read -r assembly <&2; do awk {} $assembly; done 1<(printf "{}") 2<(printf "{}")'.format(nodefind_awk, nodestring, assemblystring)
+        cluster_out = open(outfile, 'w')
+        #parallelise eventually. That's why i've written it to list first
+        for combo in zip(assemblylist, nodelist):
+            sourcefile = combo[0]
+            sequence = combo[1]
+            f = open(sourcefile)
+            for i in f:
+                if i.find(sequence)!=-1:
+                    cluster_out.write(i)
+                    wholeseq =False
+                    while wholeseq ==False:
+                        line = f.next()
+                        if line.startswith('>'):
+                            wholeseq = True
+                        else:
+                            cluster_out.write(line)
+        cluster_out.close()
 
-        ##TODO - run subprocess
-        return None
+#        previously proposed method
+        #awk (retrieve sequence) $contigID $assembly_file
+#        nodefind_awk = '''-v name=$node 'BEGIN{RS=">";FS="\n"}NR>1{if ($1~/name/) print ">"$0}\''''
+#        CMD = 'while read -r node <&3 && read -r assembly <&4; do awk {} $assembly; done 3< <(printf "{}") 4< <(printf "{}")'.format(nodefind_awk, nodestring, assemblystring)
+#        subprocess.call(['bash', '-c', CMD])
+            
+    def gen_bam(assemblylist, read_files_location):
+        assemblystring = "\n".join(assemblylist)
+        
     
     #TODO -
     def label_cluster(self):
@@ -79,6 +113,7 @@ class Contig_Cluster(object):
         - Does the sequence consistenly start and end with the same ORF? (don't need to know the proteins: Use OrfM)
         - Do regions align globally or differentially?
         - do endings overlap?
+        - where do the reads go? when do I generate bam files?
         '''
     #OrfM is already a subprocess in clusterer module
         return None
