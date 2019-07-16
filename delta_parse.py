@@ -11,7 +11,7 @@ Created on Thu May 30 13:42:15 2019
 TODOS - 
     -function for detecting and dealing with overlap situations
     -partial match situaitons
-    -Don't just pass significant Nucmer_Matches into a list. Make a subclass with inherited functions. 
+    -Don't just pass significant Nucmer_Matches into a list. Make a subclass with inherited functions, add threshold level attribute. 
 
 '''
 
@@ -116,8 +116,15 @@ class Nucmer_Match(object):
             passthresh = True
             
         return passthresh
+    
+#    def promote(self, threshold):
+#        return Sig_Match(self, threshold)
+#
+##subclass (significant-matches) when passed threshold tests
+class Sig_Match(Nucmer_Match):
+    super().__init__():
+    pass
         
-
 '''--------------------------end class definition---------------------------'''
 
 
@@ -151,7 +158,7 @@ def deltaread(file):
                 #THEN - read in match details
                 match = line.replace('>', '').split()
                 if match[0] == match[1]: #skip if it's a match to itself
-                    self_match_count +=1
+                    self_match_count +=1 #for use in assert. But that's harder to do than originally planned
                     continue
                 else:
                     recording = True
@@ -187,15 +194,14 @@ def dict_threshold(deltadict, threshold = 0.97, collate = False, outfile = None)
     match_dict = {}            
     match_dict[next(iter(deltadict.keys())) +"---"+str(threshold)] = thresh_matches
     
+     '''optionally write to file'''   
+    if outfile:
+        write_thresh_matches(match_dict, outfile)
+    
     if collate == True:
         #TODO
         #run as subprocess?
         sig_matches = collate_sig_matches(match_dict) #will need to set sig_matches to [] when calling dict_threshold in the main program
-    
-    '''optionally write to file'''   
-    if outfile:
-        write_thresh_matches(match_dict, outfile)
-    if collate==True:
         return sig_matches
     else:
         return match_dict
@@ -218,13 +224,13 @@ def sig_matches_to_dict(sig_matches):
     return None
 
 #necessary? just do this during single_linkage_cluster generation
-def extract_by_node(match_dict, node): #node with assembly information still at the front
-    firstlist = []
-    secondlist = []
-    for k, v in match_dict.items():
-        firstlist.append(v.seqs[0])
-        secondlist.append(v.seqs[1])
-    return None
+#def extract_by_node(match_dict, node): #node with assembly information still at the front
+#    firstlist = []
+#    secondlist = []
+#    for k, v in match_dict.items():
+#        firstlist.append(v.seqs[0])
+#        secondlist.append(v.seqs[1])
+#    return None
     
     
 def write_thresh_matches(match_dict, filename):
