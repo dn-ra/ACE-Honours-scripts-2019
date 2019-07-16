@@ -5,6 +5,8 @@
 #remember that the assembly name is delimited from the node by __ (double underscore) this will need to go into repeatM
 module load parallel
 
+#tee this so that it sends to amended source file and to concatenated nucmer_ready.fasta
+
 function amend_names {
 assembly=$(basename $1)
 echo $1 $assembly

@@ -10,6 +10,7 @@ TODOS
     - distinguish between ORF that have no hits and ORF hits that don't have tags
     - rename final outputs
     - Summarise ORFs for each contig
+    - change so that  prokka isn't needed
     """
 
 

@@ -7,6 +7,8 @@ To be used here for testing of single_contig clustering from delta match files''
         
 
 import re
+import subprocess
+import tempfile
 from logging import warning #also import exceptions?
 from operator import itemgetter
 
@@ -14,15 +16,19 @@ from operator import itemgetter
 #pattern to determine if contig name is in spades format
 spadespattern = re.compile(r'NODE_[0-9]*_', re.UNICODE)
 
+#set delimiter here?
+#delim = '__'
+
 '''--------------------Begin class definition------------------------------'''
 class Contig_Cluster(object):
-    def __init__(self, node_list):
+    def __init__(self, node_list, matches):
         if isinstance(node_list, str):
             raise RuntimeError('input to Contig_Cluster class must be list. String has been entered.')
         self.nodes = node_list
         self.size = len(self.nodes)
         self.av_cov = None
         self.av_length = None
+        self.matches = set(matches) 
          #has_spades necessary?       
         if self.has_spades() == True:
             length_total = 0
@@ -42,7 +48,7 @@ class Contig_Cluster(object):
             warning('Non-Spades contig names not supported yet')
     #necessary?
     def has_spades(self):
-        #TODO - stop interpreting single contigs as list
+        #check if there is at least one spades contig in node_list
         spades = False
         for c in self.nodes:
             if spadespattern.match(c):
@@ -54,21 +60,52 @@ class Contig_Cluster(object):
         return None
     
     
-    def retrieve_seqs(self):
+    def retrieve_seqs(self, outfile, get_bam_for_nodes = False):
         #all I need are nodes and location of source fasta files? use sequence library in repeatM
         #pop out assembly number from start of contig? use as input the source fastafiles?
-        nodestring = ''
-        assemblystring = ''
+        #Beware leaked processes
+        #is sending to awk really a good idea??
+        #set nodes and assemblies to dictionary instead?
+        
+                
+        nodelist = []
+        assemblylist = []
         for n in self.nodes:
             nodesplit = n.split("__")
-            nodestring+=(">"+nodesplit.pop()+"\n") #second entry into nodelist
-            assemblystring+=(nodesplit+"\n") #remainder (1st entry) into assembly list
+            nodelist.append(">"+nodesplit.pop()) #second entry into nodelist
+            assemblylist.append(nodesplit) #remainder (1st entry) into assembly list
+        if get_bam_for_nodes ==True:
+            gen_bam(assemblylist, nodelist, *location)
+            
         
-        #awk (retrieve sequence) $contigID $assembly_file
-        nodefind = '''-v name=$node 'BEGIN{RS=">";FS="\n"}NR>1{if ($1~/name/) print ">"$0}'''
-        CMD = 'while read -r node <&1 && read -r assembly <&2; do awk {} $assembly; done 1<(printf "{}") 2<(printf "{}")'.format(nodefind, nodestring, assemblystring)
+        cluster_out = open(outfile, 'w')
+        #parallelise eventually. That's why i've written it to list first
+        for combo in zip(assemblylist, nodelist):
+            sourcefile = combo[0]
+            sequence = combo[1]
+            f = open(sourcefile)
+            for i in f:
+                if i.find(sequence)!=-1:
+                    cluster_out.write(i)
+                    wholeseq =False
+                    while wholeseq ==False:
+                        line = f.next()
+                        if line.startswith('>'):
+                            wholeseq = True
+                        else:
+                            cluster_out.write(line)
+        cluster_out.close()
 
-        return None
+#        previously proposed method
+        #awk (retrieve sequence) $contigID $assembly_file
+#        nodefind_awk = '''-v name=$node 'BEGIN{RS=">";FS="\n"}NR>1{if ($1~/name/) print ">"$0}\''''
+#        CMD = 'while read -r node <&3 && read -r assembly <&4; do awk {} $assembly; done 3< <(printf "{}") 4< <(printf "{}")'.format(nodefind_awk, nodestring, assemblystring)
+#        subprocess.call(['bash', '-c', CMD])
+            
+    def gen_bam(assemblylist, read_files_location):
+        assemblystring = "\n".join(assemblylist)
+        
+    
     #TODO -
     def label_cluster(self):
         '''label cluster as linear or circular based on alignment evidence
@@ -76,6 +113,7 @@ class Contig_Cluster(object):
         - Does the sequence consistenly start and end with the same ORF? (don't need to know the proteins: Use OrfM)
         - Do regions align globally or differentially?
         - do endings overlap?
+        - where do the reads go? when do I generate bam files?
         '''
     #OrfM is already a subprocess in clusterer module
         return None
@@ -100,9 +138,39 @@ def sort_clusters(cluster_list): #or maybe a dictionary instead?
     #main sort function
     return cluster_list.sort(reverse=True, key= lambda c: (sortbysize(c), sortbylength(c), sortbycov(c)))
 
+def cluster_nucmer_matches(sig_matches): #sig_matches comes out of delta_parse.collate_sig_matches()
+    sig_match_dict = {}
+    match_links = []
+    for m in sig_matches:
+        link = m.seqs
+        try:
+            sig_match_dict[link[0]].append(m) 
+            sig_match_dict[link[1]].append(m)
+            
+        except KeyError:
+            sig_match_dict[link[0]] = [m] 
+            sig_match_dict[link[1]] = [m]
+            
+        match_links.append(link)
+    
+    cluster_list = single_linkage_cluster(match_links) #main clustering step
+    
+    for cluster in cluster_list:
+        nucmer_match_in_cluster = []
+        for node in cluster:
+            nucmer_match_in_cluster += set(sig_match_dict[node])
+        Contig_Cluster(cluster, nucmer_match_in_cluster)     
+        
+    
+    
+    ''' Index here or later?
+    sig_match_dict = {}
+    for match in sig_matches:
+        sig_match_dict[match.seqs[0]] = match
+      '''  
 
 '''!!! Don't edit this. This is what will be in the clusterer module of repeatm!!!'''
-def single_linkage_cluster(links): #originally a class function. changed here to just be 'links' as input for testing. Refer to original RepeatM module for original inputs.
+def single_linkage_cluster(links): #dictionary or list input? #originally a class function. changed here to just be 'links' as input for testing. Refer to original RepeatM module for original inputs.
     '''Not sure this is the fastest, but eh. Return a list of lists, where each
     list is a cluster.'''
     clusters = {}
