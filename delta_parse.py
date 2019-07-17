@@ -116,14 +116,14 @@ class Nucmer_Match(object):
             passthresh = True
             
         return passthresh
-    
+#TODO - promote to sig_match class
 #    def promote(self, threshold):
 #        return Sig_Match(self, threshold)
 #
 ##subclass (significant-matches) when passed threshold tests
-class Sig_Match(Nucmer_Match):
-    super().__init__():
-    pass
+#class Sig_Match(Nucmer_Match):
+#    super().__init__():
+#    pass
         
 '''--------------------------end class definition---------------------------'''
 
@@ -194,15 +194,15 @@ def dict_threshold(deltadict, threshold = 0.97, collate = False, outfile = None)
     match_dict = {}            
     match_dict[next(iter(deltadict.keys())) +"---"+str(threshold)] = thresh_matches
     
-     '''optionally write to file'''   
+    '''optionally write to file'''   
     if outfile:
         write_thresh_matches(match_dict, outfile)
     
-    if collate == True:
-        #TODO
-        #run as subprocess?
-        sig_matches = collate_sig_matches(match_dict) #will need to set sig_matches to [] when calling dict_threshold in the main program
-        return sig_matches
+#    if collate == True:
+#        #TODO
+#        #run as subprocess?
+#        sig_matches = collate_sig_matches(match_dict) #will need to set sig_matches to [] when calling dict_threshold in the main program
+#        return sig_matches
     else:
         return match_dict
     
@@ -232,7 +232,7 @@ def sig_matches_to_dict(sig_matches):
 #        secondlist.append(v.seqs[1])
 #    return None
     
-    
+#TODO - what if dictionary holds many different delta files? Currently only for dictionaries of len = 1
 def write_thresh_matches(match_dict, filename):
     #TODO - write stats to file
     '''write simple txt file containing sequence matches that pass threshold'''
@@ -243,11 +243,5 @@ def write_thresh_matches(match_dict, filename):
         for match in matches:
             f.write(match.seqs[0] + ' '+ match.seqs[1] + '\n')
 
-
-#TODO - write this funciton. Remove matches to the same assembly. implement this during deltaread? 
-def trim_identical_matches():
-   return None 
-            
-#def buildcluster
 
 #TODO - function to export in JSON format?
