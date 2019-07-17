@@ -75,7 +75,7 @@ class Contig_Cluster(object):
         #parallelise eventually. That's why i've written it to dictionaries first
         for node, assembly in node_assembly_dict.items():
             seq_tmp = tempfile.NamedTemporaryFile(delete=False)
-            tmp_node_fna[node] = seq_temp.name
+            tmp_node_fnas[node] = seq_tmp.name
             sourcefile = assembly[0]
             f = open("/".join(assembly_dir, sourcefile))
             for i in f:
@@ -149,7 +149,6 @@ def sort_clusters(cluster_list): #or maybe a dictionary instead?
     Don't get it just from the names. That's SPAdes format but some people won't use spades
     Get it from the data directly. But megahit doesn't include any of this informaiton in the contig name, 
     and coverage would need reads mapped'''
-    #TODO - sort out lambda functions
     sortbysize = lambda c: (c.size is not None, c.size)
     sortbylength = lambda c: (c.av_length is not None, c.av_length)
     sortbycov = lambda c: (c.av_cov is not None, c.av_cov)
@@ -180,14 +179,8 @@ def cluster_nucmer_matches(sig_matches): #sig_matches comes out of delta_parse.c
         for node in cluster:
             nucmer_match_in_cluster += set(sig_match_dict[node])
         Contig_Cluster(cluster, nucmer_match_in_cluster)
-        
-    
-    
-    ''' Index here or later?
-    sig_match_dict = {}
-    for match in sig_matches:
-        sig_match_dict[match.seqs[0]] = match
-      '''  
+
+ 
 '''This from RepeatM Clusterer module - author wwood'''
 '''!!! Don't edit this. This is what will be in the clusterer module of repeatm!!!'''
 def single_linkage_cluster(links): #dictionary or list input? #originally a class function. changed here to just be 'links' as input for testing. Refer to original RepeatM module for original inputs.
