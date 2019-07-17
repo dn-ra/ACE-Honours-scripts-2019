@@ -1,16 +1,14 @@
-'''This from RepeatM Clusterer module - author wwood.
-To be used here for testing of single_contig clustering from delta match files'''
+'''To be used here for testing of single_contig clustering from delta match files'''
 
 '''
     imports
         '''
         
-
+import os
 import re
 import subprocess
 import tempfile
 from logging import warning #also import exceptions?
-from operator import itemgetter
 
 
 #pattern to determine if contig name is in spades format
@@ -18,6 +16,8 @@ spadespattern = re.compile(r'NODE_[0-9]*_', re.UNICODE)
 
 #set delimiter here?
 #delim = '__'
+
+#set sam_cmd here?
 
 '''--------------------Begin class definition------------------------------'''
 class Contig_Cluster(object):
@@ -55,7 +55,8 @@ class Contig_Cluster(object):
                 spades = True
                 break
         return spades
-    #TODO -
+    
+    #TODO - for running plasflow or cbar?
     def plas_label(self):
         return None
     
@@ -66,46 +67,65 @@ class Contig_Cluster(object):
         #Beware leaked processes
         #is sending to awk really a good idea??
         #set nodes and assemblies to dictionary instead?
-        
-                
-        nodelist = []
-        assemblylist = []
+        node_assembly_dict = {}
+        tmp_node_files = []
         for n in self.nodes:
             nodesplit = n.split("__")
-            nodelist.append(">"+nodesplit.pop()) #second entry into nodelist
-            assemblylist.append(nodesplit) #remainder (1st entry) into assembly list
-        if get_bam_for_nodes ==True:
-            gen_bam(assemblylist, nodelist, *location)
+            node_assembly_dict[">"+nodesplit.pop()] = nodesplit #remainder (1st entry) into assembly list
             
-        
         cluster_out = open(outfile, 'w')
-        #parallelise eventually. That's why i've written it to list first
-        for combo in zip(assemblylist, nodelist):
-            sourcefile = combo[0]
-            sequence = combo[1]
+        #parallelise eventually. That's why i've written it to dictionaries first
+        for node, assembly in node_assembly_dict.items():
+            seq_tmp = tempfile.NamedTemporaryFile(prefix=node.strip(">"))
+            sourcefile = assembly
+            sequence = node
             f = open(sourcefile)
             for i in f:
                 if i.find(sequence)!=-1:
+                    seq_tmp.write(i)
                     cluster_out.write(i)
                     wholeseq =False
+                    seq += i #string. save to tempfile instead?
                     while wholeseq ==False:
                         line = f.next()
                         if line.startswith('>'):
                             wholeseq = True
                         else:
+                            seq_tmp.write(line)
                             cluster_out.write(line)
+            seq_tmp.close()
+            tmp_node_files.append(seq_tmp)
         cluster_out.close()
-
+        
+        if get_bam_for_nodes ==True:
+            gen_bam(node_assembly_dict, tmp_files, bam_location)
+        
+        #os.removeitems
+        
 #        previously proposed method
         #awk (retrieve sequence) $contigID $assembly_file
 #        nodefind_awk = '''-v name=$node 'BEGIN{RS=">";FS="\n"}NR>1{if ($1~/name/) print ">"$0}\''''
 #        CMD = 'while read -r node <&3 && read -r assembly <&4; do awk {} $assembly; done 3< <(printf "{}") 4< <(printf "{}")'.format(nodefind_awk, nodestring, assemblystring)
 #        subprocess.call(['bash', '-c', CMD])
             
-    def gen_bam(assemblylist, read_files_location):
-        assemblystring = "\n".join(assemblylist)
+#what if I look for orientation of reads mapped from other assemblies? Shouldn't that be consistent too?
+#have to call from within retreieve_seqs for tempfiles to be accessible
+    def gen_bam(node_assembly_dict, tmp_node_files, bam_location):
+        sam_cmd = 'samtools ______ {1} {2}' #edit this for correct command
         
+        node_bam_dict = {}
+        all_bams = [b for b in os.listdir(bam_location) if b.endswith('bam')]
+        file_string = ''
+        bam_string = ''
+        for node, assembly in node_assembly_dict.items():
+            bam_file = [b for b in all_bams if assembly.replace('fasta','') in b][0]
+            node_file = [f for f in tmp_node_files if node in f.name][0]
+            
+            #join into string separated by newline
     
+        #load samtools and parallel into environment
+        subprocess.call(['bash', '-c', 'parallel -a <(printf {}) -a <(printf {}) --link {}'.format(file_string, bam_string, sam_cmd)])
+        
     #TODO -
     def label_cluster(self):
         '''label cluster as linear or circular based on alignment evidence
@@ -168,7 +188,7 @@ def cluster_nucmer_matches(sig_matches): #sig_matches comes out of delta_parse.c
     for match in sig_matches:
         sig_match_dict[match.seqs[0]] = match
       '''  
-
+'''This from RepeatM Clusterer module - author wwood'''
 '''!!! Don't edit this. This is what will be in the clusterer module of repeatm!!!'''
 def single_linkage_cluster(links): #dictionary or list input? #originally a class function. changed here to just be 'links' as input for testing. Refer to original RepeatM module for original inputs.
     '''Not sure this is the fastest, but eh. Return a list of lists, where each
