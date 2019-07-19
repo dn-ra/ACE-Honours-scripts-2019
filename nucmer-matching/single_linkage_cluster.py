@@ -61,14 +61,12 @@ class Contig_Cluster(object):
         return None
     
     
-    def retrieve_seqs(self, outfile, get_bam_for_nodes = False):
+    def retrieve_seqs(self, assembly_dir, outfile, get_bam_for_nodes = False):
         #all I need are nodes and location of source fasta files? use sequence library in repeatM
         #pop out assembly number from start of contig? use as input the source fastafiles?
         #Beware leaked processes
-        #is sending to awk really a good idea??
-        #set nodes and assemblies to dictionary instead?
         node_assembly_dict = {}
-        tmp_node_files = []
+        tmp_node_fnas = {}
         for n in self.nodes:
             nodesplit = n.split("__")
             node_assembly_dict[">"+nodesplit.pop()] = nodesplit #remainder (1st entry) into assembly list
@@ -76,31 +74,30 @@ class Contig_Cluster(object):
         cluster_out = open(outfile, 'w')
         #parallelise eventually. That's why i've written it to dictionaries first
         for node, assembly in node_assembly_dict.items():
-            seq_tmp = tempfile.NamedTemporaryFile(prefix=node.strip(">"))
-            sourcefile = assembly
-            sequence = node
-            f = open(sourcefile)
+            seq_tmp = tempfile.NamedTemporaryFile(delete=False)
+            tmp_node_fnas[node] = seq_tmp.name
+            sourcefile = assembly[0]
+            f = open("/".join(assembly_dir, sourcefile))
             for i in f:
-                if i.find(sequence)!=-1:
-                    seq_tmp.write(i)
+                if i.find(node)!=-1:
+                    seq_tmp.write(i.encode())
                     cluster_out.write(i)
-                    wholeseq =False
-                    seq += i #string. save to tempfile instead?
+                    wholeseq =False #flag to tell me if I've taken the whole sequence yet
                     while wholeseq ==False:
-                        line = f.next()
+                        line = next(f)
                         if line.startswith('>'):
                             wholeseq = True
                         else:
-                            seq_tmp.write(line)
+                            seq_tmp.write(line.encode())
                             cluster_out.write(line)
             seq_tmp.close()
-            tmp_node_files.append(seq_tmp)
         cluster_out.close()
         
         if get_bam_for_nodes ==True:
-            gen_bam(node_assembly_dict, tmp_files, bam_location)
+            gen_bam(node_assembly_dict, tmp_node_fnas, bam_location)
         
-        #os.removeitems
+        #delete tempfiles, delete = False means user must handle their deletion
+        [os.removeitems(f) for f in tmp_node_fnas.values()]
         
 #        previously proposed method
         #awk (retrieve sequence) $contigID $assembly_file
@@ -110,7 +107,7 @@ class Contig_Cluster(object):
             
 #what if I look for orientation of reads mapped from other assemblies? Shouldn't that be consistent too?
 #have to call from within retreieve_seqs for tempfiles to be accessible
-    def gen_bam(node_assembly_dict, tmp_node_files, bam_location):
+    def gen_bam(node_assembly_dict, tmp_node_fnas, bam_location):
         sam_cmd = 'samtools ______ {1} {2}' #edit this for correct command
         
         node_bam_dict = {}
@@ -119,11 +116,14 @@ class Contig_Cluster(object):
         bam_string = ''
         for node, assembly in node_assembly_dict.items():
             bam_file = [b for b in all_bams if assembly.replace('fasta','') in b][0]
-            node_file = [f for f in tmp_node_files if node in f.name][0]
-            
-            #join into string separated by newline
+            node_bam_dict[node] = bam_file
+            file_string += tmp_node_fnas[node] + "\n"
+            bam_string += bam_file+"\n"
+        #by this stage we have a fasta_file dictionary and a bam_fiel dicitonary, with node names as keys for each. is the bam_file dictioanry necessary? it's getting put straight into the stringa anyway
+        #join into string separated by newline stuff to feed through to samtools is now in one long string with newline separators
+        
     
-        #load samtools and parallel into environment
+        #TODO - load samtools and parallel into environment
         subprocess.call(['bash', '-c', 'parallel -a <(printf {}) -a <(printf {}) --link {}'.format(file_string, bam_string, sam_cmd)])
         
     #TODO -
@@ -149,7 +149,6 @@ def sort_clusters(cluster_list): #or maybe a dictionary instead?
     Don't get it just from the names. That's SPAdes format but some people won't use spades
     Get it from the data directly. But megahit doesn't include any of this informaiton in the contig name, 
     and coverage would need reads mapped'''
-    #TODO - sort out lambda functions
     sortbysize = lambda c: (c.size is not None, c.size)
     sortbylength = lambda c: (c.av_length is not None, c.av_length)
     sortbycov = lambda c: (c.av_cov is not None, c.av_cov)
@@ -179,15 +178,9 @@ def cluster_nucmer_matches(sig_matches): #sig_matches comes out of delta_parse.c
         nucmer_match_in_cluster = []
         for node in cluster:
             nucmer_match_in_cluster += set(sig_match_dict[node])
-        Contig_Cluster(cluster, nucmer_match_in_cluster)     
-        
-    
-    
-    ''' Index here or later?
-    sig_match_dict = {}
-    for match in sig_matches:
-        sig_match_dict[match.seqs[0]] = match
-      '''  
+        Contig_Cluster(cluster, nucmer_match_in_cluster)
+
+ 
 '''This from RepeatM Clusterer module - author wwood'''
 '''!!! Don't edit this. This is what will be in the clusterer module of repeatm!!!'''
 def single_linkage_cluster(links): #dictionary or list input? #originally a class function. changed here to just be 'links' as input for testing. Refer to original RepeatM module for original inputs.

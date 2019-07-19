@@ -219,7 +219,7 @@ def collate_sig_matches(match_dict, sig_matches = None): #how to pass environmen
     sig_matches = current_matches
     return sig_matches #currently as a list of matches. But should I index their names in a dictionary?
 
-#TODO
+#TODO necessary?
 def sig_matches_to_dict(sig_matches):
     return None
 
