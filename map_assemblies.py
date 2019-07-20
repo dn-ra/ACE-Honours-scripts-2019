@@ -1,3 +1,6 @@
+##only for assemblies that follow the format made by me:
+##"filtered.2000bp.ASSEMBLYNAME.fasta"
+
 import subprocess
 import os
 
