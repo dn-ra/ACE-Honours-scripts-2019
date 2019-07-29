@@ -31,8 +31,9 @@ for file in assemblies:
 	if len(read_couple) == 0:
 		read_couple = [f for f in read_files2 if orig_assembly in f]
 		read_source = read_files_2
-	cmd = 'bamm make -d {} -c {} {} --quiet -o {} -t 24'.format("/".join([assembly_files_dir, file]), "/".join([read_source, read_couple[0]]), "/".join([read_source, read_couple[1]]), out_dir)
-	print(cmd)
+	
+	cmd = 'bamm make -d {} -c {} {} --quiet --force -o {} -t 24'.format("/".join([assembly_files_dir, file]), "/".join([read_source, read_couple[0]]), "/".join([read_source, read_couple[1]]), out_dir)
+	print("running", cmd)
 	completion_dictionary[file] = subprocess.call(['bash', '-c', cmd])
 print("all assemblies processed")
 print(completion_dictionary)
