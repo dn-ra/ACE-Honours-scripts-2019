@@ -3,7 +3,7 @@
 TAG_FILE=$1
 
 re='^[0-9]+$'
-#if decimcal value included in $2, use it as threshold, else produce all contigs with at least plasmid label
+#if decimcal value included in $2, use it as threshold, else produce all contigs with at least 1 plasmid label
 
 if [ -z $2 ]; then
 echo "finding all plasmid labels"
