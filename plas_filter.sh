@@ -1,4 +1,7 @@
 #!/bin/bash
+
+#This functions prints to stdout all the contigs from  clustered ORF-label file that contains at least one plasmid label
+
 #first input is clustered ORF_labels file. Second input is a string used to delimit separate contig records
 
 
