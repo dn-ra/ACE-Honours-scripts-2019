@@ -150,8 +150,7 @@ for key in hits.keys(): #for each ORF
                     elems = [[elem for elem in child] for child in root] #take individual entries
                     for child in elems[0]:
                         if tax == False:
-                            print(r)
-                            tax = child.find('TaxID').text
+                            tax = child.find('TaxId').text
                         if child.find('Genome') != None: #if entry not suppressed
                             temptag = child.find('Genome').text
                             if temptag != None:
