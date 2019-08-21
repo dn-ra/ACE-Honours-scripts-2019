@@ -73,7 +73,7 @@ opts=parser.parse_args()
 """feedback to user on options"""
 print('options invoked: \n\t input file: {} \n\t molecule tyep: {} \n\t output directory: {} \n\t clustering? {}'.format(opts.ids[0], opts.molecule, opts.dir, 'Yes' if opts.cluster else 'No'))
 if opts.cluster:
-    print('\n\t clustering with {}'.format(opts.cluster))
+    print('\t\t clustering with {}'.format(opts.cluster))
 
 #TODO - tidy this all up
 #make sure file writes firsts
@@ -116,6 +116,7 @@ tax_dict = {}
 for key in hits.keys(): #for each ORF
     
     write = False #counter to keep in loop until a valid hit tag is found for the ORF
+    tax = False #switcher to get taxid of first hit
     ids = [[]] #id list for this ORF, divided into separate lists in case of long url
     i=0 #index for storage of ids
     l=0 #length of urls
@@ -144,13 +145,18 @@ for key in hits.keys(): #for each ORF
             try:
                 with get_stream(ENTREZ_URL, params) as r:
                     #write records to element tree
-                    tax = False
                     orf_hits = ET.ElementTree(ET.fromstring(r.text))
                     root = orf_hits.getroot()
                     elems = [[elem for elem in child] for child in root] #take individual entries
                     for child in elems[0]:
                         if tax == False:
-                            tax = child.find('TaxId').text
+                            temptax = child.find('TaxId').text
+                            if temptax:
+                                tax_dict[key] = temptax
+                                tax = True
+                                print(key, tax)
+                            else:
+                                print(key, 'no taxtag')
                         if child.find('Genome') != None: #if entry not suppressed
                             temptag = child.find('Genome').text
                             if temptag != None:
@@ -205,6 +211,7 @@ for key in hits.keys(): #for each ORF
 
 print('hit tags made and written to file')
 
+print(tax_dict)
 
 """cluster CDS tags together around contig of origin"""
 
