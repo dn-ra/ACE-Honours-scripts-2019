@@ -93,7 +93,7 @@ with open(filename, 'w') as f:
 
 ENTREZ_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?'
 params = {'db': opts.molecule, 'version':2.0}
-
+tax_params = {'db': 'taxonomy', 'version': 2.0}
 #extract blast hit IDs from plasmid prediction results
 
 hits =OrderedDict()
@@ -231,22 +231,40 @@ if opts.cluster:
     #write clustering to file
     #3 outcomes to include: 1. No ORFs on the contig, 2. No labels in the recovered hits, 3. No hits from DMND at all
     with open(fileprefix +'.clustered.tsv', 'a') as f:
-        w = csv.writer(f, delimiter = '\t')
+        w = csv.writer(f, delimiter = '\t', quoting = csv.QUOTE_NONE)
+        #header here
+        w.writerow(["CONTIG ID", "ORF ID", "FIRST TAXID", "GENOME LABEL", "LABELLED ID", "ANNOTATION"])
         for key, value in cdscluster.items():
             w.writerow([key])
             if not value:
                 w.writerow(['\tNo ORFs on this contig']) #if there are no ORFs for that contig (1)
             else:
                 for elem in value:
+                    taxids = []
                     if elem in orf_dict:
                         cdstags = orf_dict[elem]
                         taxtag = tax_dict[elem]
+                        taxids.append(taxtag)
                         if isinstance(cdstags, str):
-                            w.writerow(['\t\t', elem, taxtag, cdstags]) #This should say --No labels-- (2)
+                            w.writerow(['\t', elem, taxtag, cdstags]) #This should say --No labels-- (2)
                         else:
-                            w.writerow(['\t\t', elem, taxtag, cdstags[0], cdstags[1], cdstags[2]])
+                            w.writerow(['\t', elem, taxtag, cdstags[0], cdstags[1], cdstags[2]])
 
                     else:
-                        w.writerow(['\t\t', elem, '--No hits--'])  # (3)
-                
-    
+                        w.writerow(['\t', elem, '--No hits--'])  # (3)
+            
+            #retrieve taxid information and write
+            tax_params['id'] = ",".join(taxids)
+            division_dict = {}
+            with get_stream(ENTREZ_URL, tax_params) as t:
+                tax_info = ET.ElementTree(ET.fromstring(t.text))
+                root = tax_info.getroot()
+                elems = [[elem for elem in child] for child in root]
+                for child in elems[0]:
+                    if child.find('GenBankDivision') != None:
+                        entry = child.find('GenBankDivision').text
+                        try:
+                            division_dict[entry] +=1
+                        except KeyError:
+                            division_dict[entry] = 1
+            w.writerow(['Top hits taxonomy: ', division_dict])
