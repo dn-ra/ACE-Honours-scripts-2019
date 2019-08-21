@@ -1,4 +1,7 @@
 #!/bin/bash
+
+#can't remember what this was for??
+
 #first argument is csv of clustered contigs.
 #second argument is ls of fasta files where these contigs are located. wildcard [*] is accepted
 

@@ -228,7 +228,7 @@ if opts.cluster:
                 for elem in value:
                     if elem in contig_dict:
                         cdstags = contig_dict[elem]
-                        if type(cdstags) == str:
+                        if isinstance(cdstags, str):
                             w.writerow(['\t\t', elem, cdstags]) #This should say --No labels-- (2)
                         else:
                             w.writerow(['\t\t', elem, cdstags[0], cdstags[1], cdstags[2]])
