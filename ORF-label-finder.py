@@ -78,7 +78,7 @@ if opts.cluster:
 #TODO - tidy this all up
 #make sure file writes firsts
 fileprefix = opts.ids[0].split('/')[-1]
-
+fileprefix = os.path.splitext(fileprefix)[0]
 
 if opts.dir:
     if not os.path.isdir(opts.dir):
@@ -109,17 +109,16 @@ with open(opts.ids[0], 'r', encoding='utf-8') as f:
             hits[line[0]].append(line[1])
         
 
-#begin iteration over each contigs blast hits
-contig_dict = {}
-
+#begin iteration over each ORFs blast hits
+orf_dict = {}
+tax_dict = {}
 
 for key in hits.keys(): #for each ORF
-
+    
     write = False #counter to keep in loop until a valid hit tag is found for the ORF
+    tax = False
     ids = [[]] #id list for this ORF, divided into separate lists in case of long url
     i=0 #index for storage of ids
-    plascnt = 0 #start count for number of plasmid hits from this contig
-    totalhits = 0 #count valid hits from each contig
     l=0 #length of urls
     for hit in hits[key]:
         l = l + len(hit) + 1 #+1 for length comma when joined
@@ -135,7 +134,7 @@ for key in hits.keys(): #for each ORF
     print('getting blast hits for ORF {}'.format(key))
     i=1
     for idlist in ids:
-        print('running {}th idlist of {}'.format(i, len(ids)))
+        print('running idlist {} of {}'.format(i, len(ids)))
         params['id'] = ','.join(idlist)
     
     #Actual DocSum retrieval step
@@ -146,21 +145,23 @@ for key in hits.keys(): #for each ORF
             try:
                 with get_stream(ENTREZ_URL, params) as r:
                     #write records to element tree            
-                    contig_hits = ET.ElementTree(ET.fromstring(r.text))
-                    root = contig_hits.getroot()
+                    orf_hits = ET.ElementTree(ET.fromstring(r.text))
+                    root = orf_hits.getroot()
                     elems = [[elem for elem in child] for child in root] #take individual entries
                     for child in elems[0]:
+                        if tax == False:
+                            tax_dict[key] = child.find('TaxID').text
                         if child.find('Genome') != None: #if entry not suppressed
                             temptag = child.find('Genome').text
                             if temptag != None:
                                 print('writing', temptag)
                                 hit = child.find('Caption').text
                                 annot = child.find('Title').text
-                                contig_dict[key] = temptag, hit, annot
+                                orf_dict[key] = temptag, hit, annot
                                 write = True
                                 break #return to idlist loop
                             else:
-                                contig_dict[key] = '--No labels--'
+                                orf_dict[key] = '--No labels--'
                                 #return to idlist loop
                                 i+=1
                         else:
@@ -226,12 +227,13 @@ if opts.cluster:
                 w.writerow(['\tNo ORFs on this contig']) #if there are no ORFs for that contig (1)
             else:
                 for elem in value:
-                    if elem in contig_dict:
-                        cdstags = contig_dict[elem]
+                    if elem in orf_dict:
+                        cdstags = orf_dict[elem]
+                        taxtag = tax_dict[elem]
                         if isinstance(cdstags, str):
-                            w.writerow(['\t\t', elem, cdstags]) #This should say --No labels-- (2)
+                            w.writerow(['\t\t', elem, taxtag, cdstags]) #This should say --No labels-- (2)
                         else:
-                            w.writerow(['\t\t', elem, cdstags[0], cdstags[1], cdstags[2]])
+                            w.writerow(['\t\t', elem, taxtag, cdstags[0], cdstags[1], cdstags[2]])
 
                     else:
                         w.writerow(['\t\t', elem, '--No hits--'])  # (3)
