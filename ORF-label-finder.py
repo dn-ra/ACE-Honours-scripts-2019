@@ -116,7 +116,6 @@ tax_dict = {}
 for key in hits.keys(): #for each ORF
     
     write = False #counter to keep in loop until a valid hit tag is found for the ORF
-    tax = False
     ids = [[]] #id list for this ORF, divided into separate lists in case of long url
     i=0 #index for storage of ids
     l=0 #length of urls
@@ -131,7 +130,7 @@ for key in hits.keys(): #for each ORF
     
 #retrive data
 #for each contig BLAST results (which constitutes any multitude of hits)
-    print('getting blast hits for ORF {}'.format(key))
+    print('retrieving hit info for ORF {}'.format(key))
     i=1
     for idlist in ids:
         print('running idlist {} of {}'.format(i, len(ids)))
@@ -144,13 +143,15 @@ for key in hits.keys(): #for each ORF
 
             try:
                 with get_stream(ENTREZ_URL, params) as r:
-                    #write records to element tree            
+                    #write records to element tree
+                    tax = False
                     orf_hits = ET.ElementTree(ET.fromstring(r.text))
                     root = orf_hits.getroot()
                     elems = [[elem for elem in child] for child in root] #take individual entries
                     for child in elems[0]:
                         if tax == False:
-                            tax_dict[key] = child.find('TaxID').text
+                            print(r)
+                            tax = child.find('TaxID').text
                         if child.find('Genome') != None: #if entry not suppressed
                             temptag = child.find('Genome').text
                             if temptag != None:
@@ -185,9 +186,13 @@ for key in hits.keys(): #for each ORF
                 pass
                 #retry
             
+            
             if repeat == True:
                 continue #go through repeat loop again
             else:
+                
+        
+                    
                 break #no errors - do not repeat
         
     #write record to file. Is this necessary?
