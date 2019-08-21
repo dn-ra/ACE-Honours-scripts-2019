@@ -231,7 +231,7 @@ if opts.cluster:
     #write clustering to file
     #3 outcomes to include: 1. No ORFs on the contig, 2. No labels in the recovered hits, 3. No hits from DMND at all
     with open(fileprefix +'.clustered.tsv', 'a') as f:
-        w = csv.writer(f, delimiter = '\t', quoting = csv.QUOTE_NONE)
+        w = csv.writer(f, delimiter = '\t')
         #header here
         w.writerow(["CONTIG ID", "ORF ID", "FIRST TAXID", "GENOME LABEL", "LABELLED ID", "ANNOTATION"])
         for key, value in cdscluster.items():
@@ -246,12 +246,12 @@ if opts.cluster:
                         taxtag = tax_dict[elem]
                         taxids.append(taxtag)
                         if isinstance(cdstags, str):
-                            w.writerow(['\t', elem, taxtag, cdstags]) #This should say --No labels-- (2)
+                            w.writerow(['\t'+ elem, taxtag, cdstags]) #This should say --No labels-- (2)
                         else:
-                            w.writerow(['\t', elem, taxtag, cdstags[0], cdstags[1], cdstags[2]])
+                            w.writerow(['\t' + elem, taxtag, cdstags[0], cdstags[1], cdstags[2]])
 
                     else:
-                        w.writerow(['\t', elem, '--No hits--'])  # (3)
+                        w.writerow(['\t' + elem, '--No hits--'])  # (3)
             
             #retrieve taxid information and write
             tax_params['id'] = ",".join(taxids)
