@@ -240,8 +240,8 @@ if opts.cluster:
             if not value:
                 w.writerow(['\tNo ORFs on this contig']) #if there are no ORFs for that contig (1)
             else:
+                taxids = []
                 for elem in value:
-                    taxids = []
                     if elem in orf_dict:
                         cdstags = orf_dict[elem]
                         taxtag = tax_dict[elem]
