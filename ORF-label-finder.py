@@ -235,6 +235,7 @@ if opts.cluster:
         #header here
         w.writerow(["CONTIG ID", "ORF ID", "FIRST TAXID", "GENOME LABEL", "LABELLED ID", "ANNOTATION"])
         for key, value in cdscluster.items():
+            division_dict = {}
             w.writerow([key])
             if not value:
                 w.writerow(['\tNo ORFs on this contig']) #if there are no ORFs for that contig (1)
@@ -255,7 +256,7 @@ if opts.cluster:
             
             #retrieve taxid information and write
             tax_params['id'] = ",".join(taxids)
-            division_dict = {}
+#            division_dict = {}
             with get_stream(ENTREZ_URL, tax_params) as t:
                 tax_info = ET.ElementTree(ET.fromstring(t.text))
                 root = tax_info.getroot()
