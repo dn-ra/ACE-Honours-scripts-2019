@@ -167,6 +167,7 @@ for key in hits.keys(): #for each ORF
                                 break #return to idlist loop
                             else:
                                 orf_dict[key] = '--No labels--'
+                                #TODO- fix so that there is always an annotation added to file
                                 #return to idlist loop
                                 i+=1
                         else:
@@ -264,8 +265,8 @@ if opts.cluster:
                 root = tax_info.getroot()
                 elems = [[elem for elem in child] for child in root]
                 for child in elems[0]:
-                    if child.find('GenBankDivision') != None:
-                        entry = child.find('GenBankDivision').text
+                    if child.find('Division') != None:
+                        entry = child.find('Division').text
                         try:
                             division_dict[entry] +=1
                         except KeyError:
