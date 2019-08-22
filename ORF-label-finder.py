@@ -253,7 +253,7 @@ if opts.cluster:
 
                     else:
                         w.writerow(['\t' + elem, '--No hits--'])  # (3)
-            
+            print(taxids)
             #retrieve taxid information and write
             tax_params['id'] = ",".join(taxids)
 #            division_dict = {}
