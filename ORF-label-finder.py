@@ -83,9 +83,9 @@ fileprefix = os.path.splitext(fileprefix)[0]
 if opts.dir:
     if not os.path.isdir(opts.dir):
         os.mkdir(opts.dir)
-    filename = "{}/{}_cdstags.csv".format(opts.dir, fileprefix)
+    filename = "{}/{}.cdstags.csv".format(opts.dir, fileprefix)
 else:
-    filename = "{}_cdstags.csv".format(fileprefix)
+    filename = "{}.cdstags.csv".format(fileprefix)
 
 with open(filename, 'w') as f:
     w = csv.writer(f, delimiter = '\t')
@@ -154,7 +154,6 @@ for key in hits.keys(): #for each ORF
                             if temptax:
                                 tax_dict[key] = temptax
                                 tax = True
-                                print(key, tax)
                             else:
                                 print(key, 'no taxtag')
                         if child.find('Genome') != None: #if entry not suppressed
@@ -211,7 +210,6 @@ for key in hits.keys(): #for each ORF
 
 print('hit tags made and written to file')
 
-print(tax_dict)
 
 """cluster CDS tags together around contig of origin"""
 
@@ -230,12 +228,16 @@ if opts.cluster:
     
     #write clustering to file
     #3 outcomes to include: 1. No ORFs on the contig, 2. No labels in the recovered hits, 3. No hits from DMND at all
-    with open(fileprefix +'.clustered.tsv', 'a') as f:
+    if opts.dir:    
+        filename = "{}/{}.clustered.tsv".format(opts.dir, fileprefix)
+    else:
+        filename = "{}.clustered.tsv".format(fileprefix)
+    
+    with open(filename, 'w') as f:
         w = csv.writer(f, delimiter = '\t')
         #header here
         w.writerow(["CONTIG ID", "ORF ID", "FIRST TAXID", "GENOME LABEL", "LABELLED ID", "ANNOTATION"])
         for key, value in cdscluster.items():
-            division_dict = {}
             w.writerow([key])
             if not value:
                 w.writerow(['\tNo ORFs on this contig']) #if there are no ORFs for that contig (1)
@@ -256,7 +258,7 @@ if opts.cluster:
             print(taxids)
             #retrieve taxid information and write
             tax_params['id'] = ",".join(taxids)
-#            division_dict = {}
+            division_dict = {}
             with get_stream(ENTREZ_URL, tax_params) as t:
                 tax_info = ET.ElementTree(ET.fromstring(t.text))
                 root = tax_info.getroot()
