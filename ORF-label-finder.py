@@ -7,7 +7,6 @@
 """
 TODOS 
     - Save hit length in final output
-    - distinguish between ORF that have no hits and ORF hits that don't have tags
     - rename final outputs
     - Summarise ORFs for each contig
     - change so that  prokka isn't needed
@@ -148,6 +147,7 @@ for key in hits.keys(): #for each ORF
                     orf_hits = ET.ElementTree(ET.fromstring(r.text))
                     root = orf_hits.getroot()
                     elems = [[elem for elem in child] for child in root] #take individual entries
+                    first_pass = True #flag to hold onto first info in case it's needed
                     for child in elems[0]:
                         if tax == False:
                             temptax = child.find('TaxId').text
@@ -156,6 +156,10 @@ for key in hits.keys(): #for each ORF
                                 tax = True
                             else:
                                 print(key, 'no taxtag')
+                        if first_pass == True:
+                            hit = child.find('Caption').text
+                            annot = child.find('Title').text
+                            first_pass = False
                         if child.find('Genome') != None: #if entry not suppressed
                             temptag = child.find('Genome').text
                             if temptag != None:
@@ -166,7 +170,7 @@ for key in hits.keys(): #for each ORF
                                 write = True
                                 break #return to idlist loop
                             else:
-                                orf_dict[key] = '--No labels--'
+                                orf_dict[key] = '--No labels--', hit, annot
                                 #TODO- fix so that there is always an annotation added to file
                                 #return to idlist loop
                                 i+=1
@@ -250,7 +254,7 @@ if opts.cluster:
                         taxtag = tax_dict[elem]
                         taxids.append(taxtag)
                         if isinstance(cdstags, str):
-                            w.writerow(['\t'+ elem, taxtag, cdstags]) #This should say --No labels-- (2)
+                            w.writerow(['\t'+ elem, taxtag, cdstags[0]]) #This should say --No labels-- (2)
                         else:
                             w.writerow(['\t' + elem, taxtag, cdstags[0], cdstags[1], cdstags[2]])
 
