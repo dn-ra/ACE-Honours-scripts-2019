@@ -9,8 +9,8 @@ if (length(args)!=3){
 }
 
 #load data from 3 methods
-plasdata <- args[which(grepl('plasflow_predictions', args))]
-cbardata <- args[which(grepl('cBar_result', args))]
+plasdata <- args[which(grepl('plasflow', args))]
+cbardata <- args[which(grepl('cbar', args))]
 virsortdata <- args[which(grepl('VIRSorter', args))]
 
 ##read data
