@@ -157,8 +157,8 @@ for key in hits.keys(): #for each ORF
                             else:
                                 print(key, 'no taxtag')
                         if first_pass == True:
-                            hit = child.find('Caption').text
-                            annot = child.find('Title').text
+                            firsthit = child.find('Caption').text
+                            firstannot = child.find('Title').text
                             first_pass = False
                         if child.find('Genome') != None: #if entry not suppressed
                             temptag = child.find('Genome').text
@@ -170,7 +170,7 @@ for key in hits.keys(): #for each ORF
                                 write = True
                                 break #return to idlist loop
                             else:
-                                orf_dict[key] = '--No labels--', hit, annot
+                                orf_dict[key] = '--No labels--', firsthit, firstannot
                                 #TODO- fix so that there is always an annotation added to file
                                 #return to idlist loop
                                 i+=1
@@ -211,7 +211,7 @@ for key in hits.keys(): #for each ORF
         if write == True:
             w.writerow([key, temptag, hit, annot])
         else:
-            w.writerow([key])
+            w.writerow([key, '---No labels---', firsthit, firstannot])
 
 print('hit tags made and written to file')
 
@@ -253,10 +253,7 @@ if opts.cluster:
                         cdstags = orf_dict[elem]
                         taxtag = tax_dict[elem]
                         taxids.append(taxtag)
-                        if isinstance(cdstags, str):
-                            w.writerow(['\t'+ elem, taxtag, cdstags[0]]) #This should say --No labels-- (2)
-                        else:
-                            w.writerow(['\t' + elem, taxtag, cdstags[0], cdstags[1], cdstags[2]])
+                        w.writerow(['\t' + elem, taxtag, cdstags[0], cdstags[1], cdstags[2]])
 
                     else:
                         w.writerow(['\t' + elem, '--No hits--'])  # (3)
