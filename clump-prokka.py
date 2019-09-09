@@ -41,7 +41,9 @@ with open(filename, 'w') as f:
     for key, value in cdscluster.items():
         w.writerow([key])
         if value:
+            print(value)
             for locus, product in value.items():
+                print(product)
                 w.writerow(['\t' + locus + '\t'.join([product[0], product[1]])])
         else:
             w.writerow(['\t' + '--No hits--'])  
