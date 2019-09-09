@@ -23,6 +23,7 @@ with open(file, 'r') as f:
         elif line[0].isdigit():
             if 'tRNA' in line:
                 trna = True
+                print('foundtrna')
         elif line[0].startswith('\t\t\tlocus'):
             locus =line[0].split('\t')[-1]
         elif line[0].startswith('\t\t\tproduct'):
@@ -32,7 +33,6 @@ with open(file, 'r') as f:
             trna = False #reset boolean
 #write clustering to file
 
-print(cdscluster)
 filename = "{}.clumped".format(fileprefix)
 
 with open(filename, 'w') as f:
@@ -42,9 +42,7 @@ with open(filename, 'w') as f:
     for key, value in cdscluster.items():
         w.writerow([key])
         if value:
-            print(value)
             for locus, product in value.items():
-                print(product)
                 w.writerow(['\t' + locus + '\t' + '\t'.join([product[0], product[1]])], )
         else:
             w.writerow(['\t' + '--No hits--'])  
