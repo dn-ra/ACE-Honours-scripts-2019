@@ -24,10 +24,11 @@ with open(file, 'r') as f:
             if 'tRNA' in line:
                 trna = True
         elif line[0].startswith('\t\t\tlocus'):
-            cdscluster[currentkey]['locus'] = (line[0].split('\t')[-1])
+            locus =line[0].split('\t')[-1]
+            cdscluster[currentkey][locus] = []
         elif line[0].startswith('\t\t\tproduct'):
-            cdscluster[currentkey]['product'] = (line[0].split('\t')[-1])
-            cdscluster[currentkey]['trna'] = str(trna)
+            cdscluster[currentkey][locus].append(line[0].split('\t')[-1])
+            cdscluster[currentkey][locus].append(str(trna))
             trna = False #reset boolean
 #write clustering to file
 
@@ -40,6 +41,7 @@ with open(filename, 'w') as f:
     for key, value in cdscluster.items():
         w.writerow([key])
         if value:
-            w.writerow(['\t' + '\t'.join(value.values())])
+            for locus, product in value.items():
+                w.writerow(['\t' + locus + '\t'.join([product[0], product[1]])])
         else:
-            w.writerow(['\t' + '--No hits--'])  #
+            w.writerow(['\t' + '--No hits--'])  
