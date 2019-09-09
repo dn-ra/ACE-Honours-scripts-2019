@@ -21,7 +21,7 @@ with open(file, 'r') as f:
             currentkey = line[0].replace(">Feature ", "")
             cdscluster.setdefault(currentkey, {})
         elif line[0].isdigit():
-            if 'tRNA' in line:
+            if line[1] == 'tRNA':
                 trna = True
                 print('foundtrna')
         elif line[0].startswith('\t\t\tlocus'):
