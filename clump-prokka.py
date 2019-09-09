@@ -45,6 +45,6 @@ with open(filename, 'w') as f:
             print(value)
             for locus, product in value.items():
                 print(product)
-                w.writerow(['\t' + locus + '\t'.join([product[0], product[1]])])
+                w.writerow(['\t' + locus + '\t' + '\t'.join([product[0], product[1]])], )
         else:
             w.writerow(['\t' + '--No hits--'])  
