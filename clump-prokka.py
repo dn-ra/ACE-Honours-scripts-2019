@@ -25,9 +25,9 @@ with open(file, 'r') as f:
                 trna = True
         elif line[0].startswith('\t\t\tlocus'):
             locus =line[0].split('\t')[-1]
-            cdscluster[currentkey][locus] = []
         elif line[0].startswith('\t\t\tproduct'):
-            cdscluster[currentkey][locus].append(line[0].split('\t')[-1])
+            product = line[0].split('\t')[-1]
+            cdscluster[currentkey][locus] = [product]
             cdscluster[currentkey][locus].append(str(trna))
             trna = False #reset boolean
 #write clustering to file
