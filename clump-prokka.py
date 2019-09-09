@@ -15,34 +15,36 @@ fileprefix = 'Prokka'
 cdscluster = {}
 with open(file, 'r') as f:
     readfile = csv.reader(f, delimiter='\n')
-    trna = False #init boolean
     for line in readfile:
-        if line[0].startswith('>'):
+        if line[0].startswith('>'): #indicates beginning of new contig
             currentkey = line[0].replace(">Feature ", "")
             cdscluster.setdefault(currentkey, {})
-        elif line[0].split()[0].isdigit():
-            if 'tRNA' in line[0]:
-                trna = True
-                print('foundtrna')
+        elif line[0].split()[0].isdigit(): #find CDS or tRNA tag
+            if 'gene' not in line[0]:
+                typ = line[0].split()[2]
+        elif line[0].startswith('\t\t\tinference'):
+            line = next(readfile) #go to next line to get inference details. if no second inference line, it's a hypothetical protein
+        
+        if line[0].startswith('\t\t\tinference'):
+            pfam = line[0].split(':')[-1]
         elif line[0].startswith('\t\t\tlocus'):
             locus =line[0].split('\t')[-1]
         elif line[0].startswith('\t\t\tproduct'):
             product = line[0].split('\t')[-1]
-            cdscluster[currentkey][locus] = [product]
-            cdscluster[currentkey][locus].append(str(trna))
-            trna = False #reset boolean
+            if product != 'hypothetical protein':
+                cdscluster[currentkey][locus] = [typ, pfam, product]
 #write clustering to file
 
 filename = "{}.clumped".format(fileprefix)
 
 with open(filename, 'w') as f:
-    w = csv.writer(f, delimiter = '\t')
+    w = csv.writer(f, delimiter = '\t', quoting = csv.QUOTE_NONE, escapechar = '\\')
     #header here
-    w.writerow(["CONTIG ID", "ORF ID", "ANNOTATION", 'is tRNA'])
+    w.writerow(["CONTIG ID", "ORF ID", "TYPE", "PFAM", "ANNOTATION"])
     for key, value in cdscluster.items():
         w.writerow([key])
         if value:
             for locus, product in value.items():
-                w.writerow(['\t' + locus + '\t' + '\t'.join([product[0], product[1]])], )
+                w.writerow(['\t' + locus + '\t' + '\t'.join([product[0], product[1], product[2]])], )
         else:
             w.writerow(['\t' + '--No hits--'])  
