@@ -27,6 +27,7 @@ with open(file, 'r') as f:
             locus =line[0].split('\t')[-1]
             cdscluster[currentkey][locus] = []
         elif line[0].startswith('\t\t\tproduct'):
+            print(line)
             cdscluster[currentkey][locus].append(line[0].split('\t')[-1])
             cdscluster[currentkey][locus].append(str(trna))
             trna = False #reset boolean
