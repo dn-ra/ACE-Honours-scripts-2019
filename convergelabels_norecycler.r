@@ -35,7 +35,7 @@ labeltable$cbar_label <- cbar$label
 
 
 #virsorter- needs to be VIRSorter_global-phage-signal.csv
-virsort <- as.character(virsort$V1)
+virsort$v1 <- as.character(virsort$V1)
 virsort <- sub(pattern = "VIRSorter_", replacement = "", x = virsort)
 subnode <- substring(virsort, first = 1, last = 20)
 posnodes <- pmatch(subnode,labeltable$contig_name)
