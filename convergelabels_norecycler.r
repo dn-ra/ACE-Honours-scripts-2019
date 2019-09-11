@@ -35,10 +35,10 @@ labeltable$cbar_label <- cbar$label
 
 
 #virsorter- needs to be VIRSorter_global-phage-signal.csv
-virsort$v1 <- as.character(virsort$V1)
-virsort$v1 <- sub(pattern = "VIRSorter_", replacement = "", x = virsort$v1)
-subnode <- substring(virsort, first = 1, last = 20)
-posnodes <- pmatch(subnode,labeltable$contig_name)
+virsort <- as.character(virsort$V1)
+virsort <- sub(pattern = "VIRSorter_", replacement = "", x = virsort)
+subnode <- substring(virsort, first = 1, last = 64)
+posnodes <- pmatch(subnode,gsub("\\.", "_", labeltable$contig_name), duplicates.ok = TRUE)
 labeltable$virsorter <- matrix(NA, nrow(plasflow))
 labeltable$virsorter[posnodes] <- "phage"
 
