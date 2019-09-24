@@ -83,9 +83,11 @@ for contig, orfs in cdscluster.items():
     score = 1
     trna_count = 0
     rrna_count = 0
+    plasmid_genes = 0
+    total_genes = 0
+    
     if orfs:
-        plasmid_genes = 0
-        total_genes = 0
+
         for info in orfs.values():
             #remove suffix from pfam accession
             pfam = info[1].split('.')[0]
@@ -102,12 +104,18 @@ for contig, orfs in cdscluster.items():
                 trna_count+=1
             elif info[0] =='rRNA':
                 rrna_count+=1
-        
+                
+
         contig_scores[contig] = [score, trna_count, rrna_count]
-        contig_enrichment.append(plasmid_genes/total_genes) 
+
     else:
         no_hits_count+=1
-
+    try:
+        contig_enrichment.append(plasmid_genes/total_genes)
+    except ZeroDivisionError:
+        pass
+    
+    
 f = open(filename, 'w')
 w = csv.writer(f, delimiter = '\t')
 w.writerow(["CONTIG ID", "PLASMID SCORE", "tRNAs", "rRNAs"])
