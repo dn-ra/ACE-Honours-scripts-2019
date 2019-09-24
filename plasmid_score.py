@@ -113,9 +113,9 @@ for contig, scores in contig_scores.items():
 filename = '{}.enriched'.format(args.out)
 
 f = open(filename, 'w')
-f.write('{} plasmid genes counted above score of ten'.format(plasmid_gene_count))
-f.write('{} total non-hypothetical genes counted'.format(total_gene_count))
-f.write('Enrichment score: {}'.format(plasmid_gene_count/total_gene_count))
+f.write('{} plasmid genes counted above score of ten\n'.format(plasmid_gene_count))
+f.write('{} total non-hypothetical genes counted\n'.format(total_gene_count))
+f.write('Enrichment score: {}\n'.format(plasmid_gene_count/total_gene_count))
 f.close()
 
 print('plasmid search performed. Scores stored in {}. {} contigs found with no identifiable orfs.'.format(filename, no_hits_count))
