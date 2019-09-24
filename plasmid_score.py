@@ -94,9 +94,10 @@ for contig, orfs in cdscluster.items():
                 if pfam_score[pfam] > 10:
                     plasmid_genes+=1
                     plasmid_gene_count +=1
-                else:
-                    total_gene_count+=1
-                    total_genes+=1
+                
+                total_gene_count+=1
+                total_genes+=1
+                
             elif info[0] == 'tRNA':
                 trna_count+=1
             elif info[0] =='rRNA':
