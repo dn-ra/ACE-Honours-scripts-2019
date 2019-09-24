@@ -76,28 +76,34 @@ no_hits_count = 0
 #these are for the enrichment data
 plasmid_gene_count = 0
 total_gene_count = 0
+contig_enrichment = []
+
 
 for contig, orfs in cdscluster.items():
     score = 1
     trna_count = 0
     rrna_count = 0
     if orfs:
+        plasmid_genes = 0
+        total_genes = 0
         for info in orfs.values():
             #remove suffix from pfam accession
             pfam = info[1].split('.')[0]
             if pfam in pfam_score:
                 score*=pfam_score[pfam]
                 if pfam_score[pfam] > 10:
+                    plasmid_genes+=1
                     plasmid_gene_count +=1
                 else:
                     total_gene_count+=1
+                    total_genes+=1
             elif info[0] == 'tRNA':
                 trna_count+=1
             elif info[0] =='rRNA':
                 rrna_count+=1
         
         contig_scores[contig] = [score, trna_count, rrna_count]
-    
+        contig_enrichment.append(plasmid_genes/total_genes) 
     else:
         no_hits_count+=1
 
@@ -113,9 +119,11 @@ for contig, scores in contig_scores.items():
 filename = '{}.enriched'.format(args.out)
 
 f = open(filename, 'w')
-f.write('{} plasmid genes counted above score of ten\n'.format(plasmid_gene_count))
-f.write('{} total non-hypothetical genes counted\n'.format(total_gene_count))
-f.write('Enrichment score: {}\n'.format(plasmid_gene_count/total_gene_count))
+f.write('#{} plasmid genes counted above score of ten\n'.format(plasmid_gene_count))
+f.write('#{} total non-hypothetical genes counted\n'.format(total_gene_count))
+f.write('#Enrichment score: {}\n'.format(plasmid_gene_count/total_gene_count))
+f.write(",".join(contig_enrichment))
+        
 f.close()
 
 print('plasmid search performed. Scores stored in {}. {} contigs found with no identifiable orfs.'.format(filename, no_hits_count))
