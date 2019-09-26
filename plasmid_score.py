@@ -80,7 +80,7 @@ contig_enrichment = []
 
 
 for contig, orfs in cdscluster.items():
-    score = 1
+    score = []
     trna_count = 0
     rrna_count = 0
     plasmid_genes = 0
@@ -92,7 +92,7 @@ for contig, orfs in cdscluster.items():
             #remove suffix from pfam accession
             pfam = info[1].split('.')[0]
             if pfam in pfam_score:
-                score*=pfam_score[pfam]
+                score.append(pfam_score[pfam])
                 if pfam_score[pfam] > 10:
                     plasmid_genes+=1
                     plasmid_gene_count +=1
@@ -106,7 +106,7 @@ for contig, orfs in cdscluster.items():
                 rrna_count+=1
                 
 
-        contig_scores[contig] = [score, trna_count, rrna_count]
+        contig_scores[contig] = [sum(score)/length(score), trna_count, rrna_count]
 
     else:
         no_hits_count+=1
