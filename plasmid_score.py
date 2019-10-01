@@ -106,7 +106,7 @@ for contig, orfs in cdscluster.items():
                 rrna_count+=1
                 
 
-        contig_scores[contig] = [sum(score)/length(score), trna_count, rrna_count]
+        contig_scores[contig] = [sum(score)/len(score), trna_count, rrna_count]
 
     else:
         no_hits_count+=1
