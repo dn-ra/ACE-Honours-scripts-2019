@@ -105,9 +105,10 @@ for contig, orfs in cdscluster.items():
             elif info[0] =='rRNA':
                 rrna_count+=1
                 
-
-        contig_scores[contig] = [sum(score)/len(score), trna_count, rrna_count]
-
+        if score:
+            contig_scores[contig] = [sum(score)/len(score), trna_count, rrna_count]
+        else:
+            contig_scores[contig] = [sum(score)/1, trna_count, rrna_count]
     else:
         no_hits_count+=1
     try:
