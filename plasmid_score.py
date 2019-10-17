@@ -46,7 +46,8 @@ with open(args.p, 'r') as f:
         elif line[0].startswith('\t\t\tproduct'):
             product = line[0].split('\t')[-1]
             if product != 'hypothetical protein':
-                cdscluster[currentkey][locus] = [typ, pfam, product]
+                if typ != 'tRNA':
+                    cdscluster[currentkey][locus] = [typ, pfam, product]
                 
 #write clustering to file
 
